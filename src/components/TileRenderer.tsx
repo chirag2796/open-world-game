@@ -97,7 +97,7 @@ const TileRenderer: React.FC<TileRendererProps> = ({ map, cameraX, cameraY, useS
         const screenY = y * SCALED_TILE - offsetY;
 
         if (useSprites) {
-          const [col, row] = getTileSprite(tile, x, y);
+          const [col, row] = getTileSprite(tile, x, y, map);
           result.push(
             <View
               key={`${x}-${y}`}

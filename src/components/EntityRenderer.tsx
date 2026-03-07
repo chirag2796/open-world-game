@@ -147,7 +147,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
   animFrame,
   cameraX,
   cameraY,
-  useSprites = true,
+  useSprites = false,
 }) => {
   const offsetX = cameraX - SCREEN_WIDTH / 2;
   const offsetY = cameraY - GAME_AREA_HEIGHT / 2;

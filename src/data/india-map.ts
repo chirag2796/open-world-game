@@ -1,6 +1,19 @@
 import { TileType, TileMapData, BiomeType, StateDef, SettlementDef, NPC } from '../types';
+import {
+  placeStructureCentered, isAreaClear,
+  FOREST_SMALL, FOREST_MEDIUM, FOREST_LARGE,
+  PINE_GROVE, PALM_GROVE, JUNGLE_PATCH, BANYAN_GROVE,
+  LAKE_SMALL, LAKE_MEDIUM, SWAMP_PATCH,
+  ROCK_CLUSTER, CLIFF_FACE, SAND_DUNE, FLOWER_MEADOW,
+  VILLAGE_SMALL, TOWN, CITY,
+  FORT_LARGE, PALACE, TEMPLE_LARGE, RUINS_SITE,
+  CAMPSITE_AREA,
+  StructureTemplate,
+} from './structures';
 
+// === MAP TEMPLATE ===
 // Low-res template: 40 cols x 50 rows → upscale 8x → 320x400 tile map
+// Each character maps to a state/biome region
 const TEMPLATE: string[] = [
   '........................................', // 0
   '........................................', // 1
@@ -58,7 +71,8 @@ const UPSCALE = 8;
 const MAP_W = 40 * UPSCALE; // 320
 const MAP_H = 50 * UPSCALE; // 400
 
-// State definitions (all tile coordinates for 320x400 map)
+// === STATE/BIOME DEFINITIONS ===
+
 const STATES: Record<string, StateDef> = {
   h: { code: 'h', name: 'Himachal Pradesh', biome: 'mountain', settlements: [
     { name: 'Shimla', type: 'city', tileX: 92, tileY: 32 },
@@ -206,27 +220,22 @@ const STATES: Record<string, StateDef> = {
 
 STATES['d'] = STATES['D'];
 
-// Biome → tile type mapping with new variety types
-const BIOME_TILES: Record<BiomeType, TileType[]> = {
-  ocean:        [TileType.OCEAN, TileType.OCEAN, TileType.DEEP_OCEAN],
-  snow:         [TileType.SNOW, TileType.SNOW, TileType.ICE],
-  mountain:     [TileType.MOUNTAIN, TileType.MOUNTAIN, TileType.CLIFF, TileType.ROCKS, TileType.PLATEAU],
-  desert:       [TileType.DESERT, TileType.DESERT, TileType.DESERT, TileType.SAND_DUNES, TileType.SAND_DUNES, TileType.PLAINS],
-  plains:       [TileType.PLAINS, TileType.PLAINS, TileType.PLAINS, TileType.TALL_GRASS, TileType.FARM, TileType.FLOWERS],
-  forest:       [TileType.FOREST, TileType.FOREST, TileType.TREE_BANYAN, TileType.TALL_GRASS, TileType.PLAINS],
-  dense_forest: [TileType.DENSE_JUNGLE, TileType.DENSE_JUNGLE, TileType.FOREST, TileType.TREE_BANYAN, TileType.TALL_GRASS],
-  plateau:      [TileType.PLATEAU, TileType.PLATEAU, TileType.ROCKS, TileType.FOREST, TileType.TALL_GRASS],
-  wetland:      [TileType.SWAMP, TileType.SWAMP, TileType.TALL_GRASS, TileType.PLAINS, TileType.SHALLOW_WATER],
-  coastal:      [TileType.PLAINS, TileType.PLAINS, TileType.TREE_PALM, TileType.FLOWERS, TileType.FOREST, TileType.BEACH],
+// === BIOME → BASE TILE ===
+// Each biome gets ONE primary tile — no random variant noise
+const BIOME_BASE_TILE: Record<BiomeType, TileType> = {
+  ocean: TileType.OCEAN,
+  snow: TileType.SNOW,
+  mountain: TileType.MOUNTAIN,
+  desert: TileType.DESERT,
+  plains: TileType.PLAINS,
+  forest: TileType.FOREST,
+  dense_forest: TileType.DENSE_JUNGLE,
+  plateau: TileType.PLATEAU,
+  wetland: TileType.SWAMP,
+  coastal: TileType.PLAINS,
 };
 
-function hash(x: number, y: number): number {
-  let h = (x * 374761393 + y * 668265263) | 0;
-  h = ((h ^ (h >> 13)) * 1274126177) | 0;
-  return ((h ^ (h >> 16)) >>> 0) / 4294967296;
-}
-
-// Major rivers (coordinates for 320x400 map)
+// === RIVERS ===
 const RIVERS: number[][][] = [
   // Ganges
   [[124,36],[120,48],[112,64],[116,76],[128,84],[140,88],[152,96],[164,104],[172,116]],
@@ -246,10 +255,157 @@ const RIVERS: number[][][] = [
   [[76,240],[84,244],[92,248]],
 ];
 
-function drawLine(
+// === STRUCTURE PLACEMENTS ===
+// Each placement: [structure, centerX, centerY]
+// These are hand-placed for geographic accuracy
+
+interface StructurePlacement {
+  structure: StructureTemplate;
+  x: number;
+  y: number;
+}
+
+// Forest placements — based on actual Indian geography
+const NATURE_PLACEMENTS: StructurePlacement[] = [
+  // Northern Himalayan pine forests
+  { structure: PINE_GROVE, x: 78, y: 22 },
+  { structure: PINE_GROVE, x: 90, y: 18 },
+  { structure: PINE_GROVE, x: 96, y: 26 },
+  { structure: PINE_GROVE, x: 118, y: 30 },
+  { structure: PINE_GROVE, x: 130, y: 28 },
+  { structure: FOREST_SMALL, x: 84, y: 28 },
+  { structure: FOREST_SMALL, x: 126, y: 34 },
+
+  // Madhya Pradesh / Central India forests
+  { structure: FOREST_LARGE, x: 92, y: 108 },
+  { structure: FOREST_MEDIUM, x: 108, y: 100 },
+  { structure: BANYAN_GROVE, x: 96, y: 120 },
+  { structure: FOREST_SMALL, x: 86, y: 130 },
+
+  // Chhattisgarh dense jungles
+  { structure: JUNGLE_PATCH, x: 128, y: 136 },
+  { structure: JUNGLE_PATCH, x: 140, y: 144 },
+  { structure: JUNGLE_PATCH, x: 134, y: 150 },
+
+  // Jharkhand forests
+  { structure: FOREST_MEDIUM, x: 150, y: 124 },
+  { structure: FOREST_SMALL, x: 158, y: 118 },
+
+  // Western Ghats forests
+  { structure: FOREST_MEDIUM, x: 60, y: 216 },
+  { structure: FOREST_SMALL, x: 56, y: 228 },
+  { structure: FOREST_MEDIUM, x: 68, y: 248 },
+  { structure: BANYAN_GROVE, x: 72, y: 256 },
+
+  // Kerala palm forests
+  { structure: PALM_GROVE, x: 84, y: 296 },
+  { structure: PALM_GROVE, x: 82, y: 304 },
+  { structure: PALM_GROVE, x: 86, y: 316 },
+  { structure: PALM_GROVE, x: 80, y: 288 },
+
+  // South Indian tropical forests
+  { structure: PALM_GROVE, x: 108, y: 288 },
+  { structure: FOREST_SMALL, x: 116, y: 280 },
+  { structure: BANYAN_GROVE, x: 120, y: 268 },
+
+  // Northeast India forests
+  { structure: JUNGLE_PATCH, x: 220, y: 100 },
+  { structure: FOREST_MEDIUM, x: 236, y: 108 },
+  { structure: JUNGLE_PATCH, x: 248, y: 112 },
+  { structure: FOREST_SMALL, x: 260, y: 132 },
+  { structure: JUNGLE_PATCH, x: 256, y: 148 },
+
+  // Assam/Bengal wetlands
+  { structure: SWAMP_PATCH, x: 170, y: 118 },
+  { structure: SWAMP_PATCH, x: 176, y: 126 },
+  { structure: SWAMP_PATCH, x: 208, y: 116 },
+
+  // Odisha coastal forests
+  { structure: PALM_GROVE, x: 174, y: 148 },
+  { structure: FOREST_SMALL, x: 170, y: 158 },
+
+  // Rajasthan sand dunes
+  { structure: SAND_DUNE, x: 40, y: 80 },
+  { structure: SAND_DUNE, x: 50, y: 92 },
+  { structure: SAND_DUNE, x: 44, y: 104 },
+  { structure: SAND_DUNE, x: 56, y: 110 },
+  { structure: SAND_DUNE, x: 38, y: 96 },
+
+  // Gujarat desert
+  { structure: SAND_DUNE, x: 24, y: 152 },
+  { structure: SAND_DUNE, x: 32, y: 160 },
+
+  // Lakes
+  { structure: LAKE_MEDIUM, x: 170, y: 120 },
+  { structure: LAKE_SMALL, x: 200, y: 118 },
+  { structure: LAKE_SMALL, x: 88, y: 264 },
+  { structure: LAKE_SMALL, x: 140, y: 84 },
+
+  // Rock formations
+  { structure: ROCK_CLUSTER, x: 62, y: 192 },
+  { structure: ROCK_CLUSTER, x: 78, y: 236 },
+  { structure: CLIFF_FACE, x: 82, y: 20 },
+  { structure: CLIFF_FACE, x: 130, y: 26 },
+  { structure: ROCK_CLUSTER, x: 74, y: 232 },
+
+  // Flower meadows
+  { structure: FLOWER_MEADOW, x: 80, y: 58 },
+  { structure: FLOWER_MEADOW, x: 92, y: 52 },
+  { structure: FLOWER_MEADOW, x: 110, y: 72 },
+  { structure: FLOWER_MEADOW, x: 100, y: 276 },
+];
+
+// Unique landmark placements
+const LANDMARK_PLACEMENTS: StructurePlacement[] = [
+  // Delhi - Red Fort
+  { structure: FORT_LARGE, x: 104, y: 56 },
+  // Agra - Mughal Palace (Taj area)
+  { structure: PALACE, x: 116, y: 76 },
+  // Amber Fort (Jaipur)
+  { structure: FORT_LARGE, x: 72, y: 88 },
+  // Varanasi temples
+  { structure: TEMPLE_LARGE, x: 144, y: 88 },
+  // Hampi ruins
+  { structure: RUINS_SITE, x: 82, y: 242 },
+  { structure: TEMPLE_LARGE, x: 80, y: 240 },
+  // Konark Sun Temple
+  { structure: TEMPLE_LARGE, x: 178, y: 156 },
+  // Madurai Temple
+  { structure: TEMPLE_LARGE, x: 112, y: 300 },
+  // Golconda Fort
+  { structure: FORT_LARGE, x: 108, y: 208 },
+  // Bodh Gaya temple
+  { structure: TEMPLE_LARGE, x: 156, y: 104 },
+  // Sanchi Stupa
+  { structure: TEMPLE_LARGE, x: 96, y: 112 },
+  // Khajuraho temples
+  { structure: TEMPLE_LARGE, x: 112, y: 108 },
+  // Tawang monastery
+  { structure: TEMPLE_LARGE, x: 252, y: 108 },
+  // Ancient ruins scattered
+  { structure: RUINS_SITE, x: 36, y: 172 },
+  { structure: RUINS_SITE, x: 120, y: 276 },
+  { structure: RUINS_SITE, x: 56, y: 220 },
+];
+
+// === HELPER FUNCTIONS ===
+
+function hash(x: number, y: number): number {
+  let h = (x * 374761393 + y * 668265263) | 0;
+  h = ((h ^ (h >> 13)) * 1274126177) | 0;
+  return ((h ^ (h >> 16)) >>> 0) / 4294967296;
+}
+
+function setTile(ground: TileType[][], x: number, y: number, tile: TileType) {
+  if (x >= 0 && x < MAP_W && y >= 0 && y < MAP_H) {
+    ground[y][x] = tile;
+  }
+}
+
+function drawRiverSegment(
   ground: TileType[][],
   x0: number, y0: number, x1: number, y1: number,
-  tile: TileType, width: number = 1,
+  width: number,
 ) {
   const dx = Math.abs(x1 - x0);
   const dy = Math.abs(y1 - y0);
@@ -262,7 +418,7 @@ function drawLine(
     for (let w = -Math.floor(width / 2); w <= Math.floor(width / 2); w++) {
       const wy = cy + w;
       if (cx >= 0 && cx < MAP_W && wy >= 0 && wy < MAP_H) {
-        ground[wy][cx] = tile;
+        ground[wy][cx] = TileType.RIVER;
       }
     }
     if (cx === x1 && cy === y1) break;
@@ -272,120 +428,206 @@ function drawLine(
   }
 }
 
-function setTile(ground: TileType[][], x: number, y: number, tile: TileType) {
-  if (x >= 0 && x < MAP_W && y >= 0 && y < MAP_H) {
-    ground[y][x] = tile;
+function drawPathSegment(
+  ground: TileType[][],
+  x0: number, y0: number, x1: number, y1: number,
+  tile: TileType,
+) {
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  let cx = x0, cy = y0;
+
+  while (true) {
+    // Only overwrite non-building, non-water tiles
+    if (cx >= 0 && cx < MAP_W && cy >= 0 && cy < MAP_H) {
+      const existing = ground[cy][cx];
+      if (existing !== TileType.OCEAN && existing !== TileType.DEEP_OCEAN &&
+          existing !== TileType.RIVER && existing !== TileType.LAKE &&
+          existing !== TileType.WALL_MUD && existing !== TileType.WALL_STONE &&
+          existing !== TileType.FORT_WALL && existing !== TileType.PALACE &&
+          existing !== TileType.TEMPLE && existing !== TileType.ROOF) {
+        ground[cy][cx] = tile;
+      }
+    }
+    if (cx === x1 && cy === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; cx += sx; }
+    if (e2 < dx) { err += dx; cy += sy; }
   }
 }
 
+// Settlement placement using structure templates
 function placeSettlement(ground: TileType[][], s: SettlementDef, biome: BiomeType) {
-  const sizes = { village: 12, city: 22, capital: 34 };
-  const size = sizes[s.type];
-  const half = Math.floor(size / 2);
   const baseTile = biome === 'desert' ? TileType.DESERT : TileType.PLAINS;
-  const pathTile = s.type === 'village' ? TileType.PATH_DIRT : TileType.PATH_STONE;
-  const wallTile = s.type === 'capital' ? TileType.FORT_WALL : TileType.WALL_MUD;
 
-  // Clear area
-  for (let dy = -half - 2; dy <= half + 2; dy++) {
-    for (let dx = -half - 2; dx <= half + 2; dx++) {
+  // Clear area around settlement
+  const clearSize = s.type === 'capital' ? 18 : s.type === 'city' ? 14 : 8;
+  for (let dy = -clearSize; dy <= clearSize; dy++) {
+    for (let dx = -clearSize; dx <= clearSize; dx++) {
       setTile(ground, s.tileX + dx, s.tileY + dy, baseTile);
     }
   }
 
-  // Cross paths
-  for (let i = -half; i <= half; i++) {
-    setTile(ground, s.tileX + i, s.tileY, pathTile);
-    setTile(ground, s.tileX + i, s.tileY + 1, pathTile);
-    setTile(ground, s.tileX, s.tileY + i, pathTile);
-    setTile(ground, s.tileX + 1, s.tileY + i, pathTile);
-  }
-
-  // Walls for cities/capital
-  if (s.type !== 'village') {
-    for (let i = -half; i <= half; i++) {
-      const isGate = Math.abs(i) <= 1;
-      const tile = isGate ? TileType.DOOR : wallTile;
-      setTile(ground, s.tileX + i, s.tileY - half, tile);
-      setTile(ground, s.tileX + i, s.tileY + half, tile);
-      setTile(ground, s.tileX - half, s.tileY + i, tile);
-      setTile(ground, s.tileX + half, s.tileY + i, tile);
-    }
-  }
-
-  // Buildings
-  const bldg = s.type === 'capital' ? TileType.WALL_STONE : TileType.WALL_MUD;
-  for (const [bx, by, w, h, type] of getBuildingPositions(s.type, half)) {
-    for (let dy = 0; dy < h; dy++) {
-      for (let dx = 0; dx < w; dx++) {
-        const tx = s.tileX + bx + dx;
-        const ty = s.tileY + by + dy;
-        if (dy === h - 1 && dx === Math.floor(w / 2)) {
-          setTile(ground, tx, ty, TileType.DOOR);
-        } else if (dy === 0) {
-          setTile(ground, tx, ty, TileType.ROOF);
-        } else {
-          setTile(ground, tx, ty, type === 'special' ? TileType.TEMPLE : bldg);
-        }
-      }
-    }
-  }
-
-  // Central feature
-  if (s.type === 'village') {
-    setTile(ground, s.tileX, s.tileY, TileType.WELL);
-    for (let d = -1; d <= 1; d++) setTile(ground, s.tileX + d, s.tileY - 2, TileType.GARDEN);
-  } else if (s.type === 'capital') {
-    for (let dy = -3; dy <= 3; dy++) {
-      for (let dx = -3; dx <= 3; dx++) {
-        if (Math.abs(dx) === 3 || Math.abs(dy) === 3) {
-          setTile(ground, s.tileX + dx, s.tileY + dy, TileType.FORT_WALL);
-        } else if (dx === 0 && dy === 3) {
-          setTile(ground, s.tileX + dx, s.tileY + dy, TileType.DOOR);
-        } else {
-          setTile(ground, s.tileX + dx, s.tileY + dy, TileType.PALACE);
-        }
-      }
-    }
-    for (let dx = -5; dx <= 5; dx++) {
-      for (let dy = -6; dy <= -5; dy++) {
-        setTile(ground, s.tileX + dx, s.tileY + dy, TileType.GARDEN);
-      }
-    }
+  // Place appropriate structure template
+  if (s.type === 'capital') {
+    // Capital gets a fort + city layout
+    placeStructureCentered(ground, CITY, s.tileX, s.tileY, MAP_W, MAP_H);
+  } else if (s.type === 'city') {
+    placeStructureCentered(ground, TOWN, s.tileX, s.tileY, MAP_W, MAP_H);
   } else {
-    for (let dy = -2; dy <= 2; dy++) {
-      for (let dx = -2; dx <= 2; dx++) {
-        setTile(ground, s.tileX + dx, s.tileY + dy, TileType.MARKET);
+    placeStructureCentered(ground, VILLAGE_SMALL, s.tileX, s.tileY, MAP_W, MAP_H);
+  }
+}
+
+// Add coastal transitions (beaches and shallow water)
+function addCoastalTransitions(ground: TileType[][]) {
+  // Two passes: first mark beaches on land tiles adjacent to water,
+  // then mark shallow water on ocean tiles adjacent to land
+  const beachTiles: [number, number][] = [];
+  const shallowTiles: [number, number][] = [];
+
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
+      const tile = ground[y][x];
+      const neighbors = [ground[y-1][x], ground[y+1][x], ground[y][x-1], ground[y][x+1]];
+      const hasOcean = neighbors.some(n => n === TileType.OCEAN || n === TileType.DEEP_OCEAN);
+      const hasLand = neighbors.some(n => n !== TileType.OCEAN && n !== TileType.DEEP_OCEAN &&
+                                          n !== TileType.RIVER && n !== TileType.LAKE &&
+                                          n !== TileType.SHALLOW_WATER);
+
+      if (tile !== TileType.OCEAN && tile !== TileType.DEEP_OCEAN && tile !== TileType.RIVER && hasOcean) {
+        beachTiles.push([x, y]);
+      }
+      if (tile === TileType.OCEAN && hasLand) {
+        shallowTiles.push([x, y]);
+      }
+    }
+  }
+
+  for (const [x, y] of beachTiles) ground[y][x] = TileType.BEACH;
+  for (const [x, y] of shallowTiles) ground[y][x] = TileType.SHALLOW_WATER;
+}
+
+// Add campsites between distant settlements
+function placeCampsites(ground: TileType[][], settlements: { settlement: SettlementDef }[]) {
+  for (let i = 0; i < settlements.length; i++) {
+    for (let j = i + 1; j < settlements.length; j++) {
+      const s1 = settlements[i].settlement, s2 = settlements[j].settlement;
+      const dx = s2.tileX - s1.tileX, dy = s2.tileY - s1.tileY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 30 && dist < 80) {
+        const cx = Math.floor(s1.tileX + dx * 0.5);
+        const cy = Math.floor(s1.tileY + dy * 0.5);
+        if (isAreaClear(ground, cx - 2, cy - 2, 5, 5, MAP_W, MAP_H)) {
+          placeStructureCentered(ground, CAMPSITE_AREA, cx, cy, MAP_W, MAP_H);
+        }
       }
     }
   }
 }
 
-function getBuildingPositions(type: string, half: number): [number, number, number, number, string][] {
-  if (type === 'village') {
-    return [
-      [-half + 2, -half + 2, 3, 3, 'normal'],
-      [half - 4, -half + 2, 3, 3, 'normal'],
-      [-half + 2, half - 4, 3, 3, 'normal'],
-      [half - 4, half - 4, 3, 3, 'special'],
-    ];
+// === MAIN MAP GENERATOR ===
+
+export function generateIndiaMap(): TileMapData {
+  const ground: TileType[][] = Array.from({ length: MAP_H }, () =>
+    Array.from({ length: MAP_W }, () => TileType.OCEAN)
+  );
+
+  // 1. Fill base terrain from template (one tile per biome — no noise)
+  for (let ty = 0; ty < 50; ty++) {
+    const row = TEMPLATE[ty];
+    if (!row) continue;
+    for (let tx = 0; tx < 40; tx++) {
+      const code = row[tx];
+      if (code === '.') continue;
+      let biome: BiomeType;
+      if (code === '^') { biome = 'snow'; }
+      else {
+        const state = STATES[code];
+        if (!state) continue;
+        biome = state.biome;
+      }
+      const baseTile = BIOME_BASE_TILE[biome];
+      for (let dy = 0; dy < UPSCALE; dy++) {
+        for (let dx = 0; dx < UPSCALE; dx++) {
+          const px = tx * UPSCALE + dx;
+          const py = ty * UPSCALE + dy;
+          if (px < MAP_W && py < MAP_H) {
+            ground[py][px] = baseTile;
+          }
+        }
+      }
+    }
   }
-  if (type === 'city') {
-    return [
-      [-8, -8, 4, 3, 'normal'], [-2, -8, 4, 3, 'normal'], [4, -8, 4, 3, 'special'],
-      [-8, -3, 3, 3, 'normal'], [6, -3, 3, 3, 'normal'],
-      [-8, 4, 4, 3, 'normal'], [-2, 4, 4, 3, 'normal'], [4, 4, 4, 3, 'normal'],
-      [-8, 8, 3, 3, 'normal'], [6, 8, 3, 3, 'normal'],
-    ];
+
+  // 2. Coastal transitions (beaches + shallow water)
+  addCoastalTransitions(ground);
+
+  // 3. Rivers
+  for (const river of RIVERS) {
+    for (let i = 0; i < river.length - 1; i++) {
+      drawRiverSegment(ground, river[i][0], river[i][1], river[i + 1][0], river[i + 1][1], i < 2 ? 2 : 3);
+    }
   }
-  return [
-    [-12, -12, 4, 3, 'normal'], [-6, -12, 4, 3, 'normal'], [2, -12, 4, 3, 'normal'], [8, -12, 4, 3, 'special'],
-    [-12, -6, 3, 3, 'normal'], [10, -6, 3, 3, 'normal'],
-    [-12, 6, 4, 3, 'normal'], [-6, 6, 4, 3, 'normal'], [2, 6, 4, 3, 'normal'], [8, 6, 4, 3, 'normal'],
-    [-12, 10, 3, 3, 'normal'], [10, 10, 3, 3, 'normal'],
-    [8, -6, 3, 4, 'special'],
-  ];
+
+  // 4. Place nature structures (forests, lakes, rocks, etc.)
+  for (const placement of NATURE_PLACEMENTS) {
+    placeStructureCentered(ground, placement.structure, placement.x, placement.y, MAP_W, MAP_H);
+  }
+
+  // 5. Add scattered tall grass in plains regions (light texture, not noise)
+  for (let y = 0; y < MAP_H; y += 4) {
+    for (let x = 0; x < MAP_W; x += 4) {
+      if (ground[y][x] === TileType.PLAINS && hash(x * 3, y * 7) < 0.12) {
+        // Small 2x2 tall grass patch
+        for (let dy = 0; dy < 2; dy++) {
+          for (let dx = 0; dx < 2; dx++) {
+            if (ground[y + dy]?.[x + dx] === TileType.PLAINS) {
+              ground[y + dy][x + dx] = TileType.TALL_GRASS;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 6. Settlements
+  const settlements = getAllSettlements();
+  for (const { settlement, biome } of settlements) {
+    placeSettlement(ground, settlement, biome);
+  }
+
+  // 7. Place unique landmarks
+  for (const placement of LANDMARK_PLACEMENTS) {
+    placeStructureCentered(ground, placement.structure, placement.x, placement.y, MAP_W, MAP_H);
+  }
+
+  // 8. Connect settlements with paths
+  for (let i = 0; i < settlements.length; i++) {
+    let nearest = -1, minDist = 60;
+    for (let j = 0; j < settlements.length; j++) {
+      if (i === j) continue;
+      const dx = settlements[i].settlement.tileX - settlements[j].settlement.tileX;
+      const dy = settlements[i].settlement.tileY - settlements[j].settlement.tileY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < minDist) { minDist = dist; nearest = j; }
+    }
+    if (nearest >= 0) {
+      const s1 = settlements[i].settlement, s2 = settlements[nearest].settlement;
+      drawPathSegment(ground, s1.tileX, s1.tileY, s2.tileX, s2.tileY, TileType.PATH_DIRT);
+    }
+  }
+
+  // 9. Campsites between distant settlements
+  placeCampsites(ground, settlements);
+
+  return { width: MAP_W, height: MAP_H, ground };
 }
+
+// === EXPORTS: LOOKUP FUNCTIONS ===
 
 export function getAllSettlements(): { settlement: SettlementDef; biome: BiomeType }[] {
   const seen = new Set<string>();
@@ -435,181 +677,10 @@ export function getBiomeAt(tileX: number, tileY: number): BiomeType {
   return STATES[code]?.biome || 'plains';
 }
 
-// Generate the full 320x400 tile map
-export function generateIndiaMap(): TileMapData {
-  const ground: TileType[][] = Array.from({ length: MAP_H }, () =>
-    Array.from({ length: MAP_W }, () => TileType.OCEAN)
-  );
-
-  // 1. Fill biome tiles from template (upscale 8x)
-  for (let ty = 0; ty < 50; ty++) {
-    const row = TEMPLATE[ty];
-    if (!row) continue;
-    for (let tx = 0; tx < 40; tx++) {
-      const code = row[tx];
-      if (code === '.') continue;
-      let biome: BiomeType;
-      if (code === '^') { biome = 'snow'; }
-      else {
-        const state = STATES[code];
-        if (!state) continue;
-        biome = state.biome;
-      }
-      const tiles = BIOME_TILES[biome];
-      for (let dy = 0; dy < UPSCALE; dy++) {
-        for (let dx = 0; dx < UPSCALE; dx++) {
-          const px = tx * UPSCALE + dx;
-          const py = ty * UPSCALE + dy;
-          if (px < MAP_W && py < MAP_H) {
-            ground[py][px] = tiles[Math.floor(hash(px, py) * tiles.length)];
-          }
-        }
-      }
-    }
-  }
-
-  // 2. Beaches & shallow water near coastlines
-  for (let y = 1; y < MAP_H - 1; y++) {
-    for (let x = 1; x < MAP_W - 1; x++) {
-      if (ground[y][x] !== TileType.OCEAN && ground[y][x] !== TileType.DEEP_OCEAN) {
-        const neighbors = [ground[y-1][x], ground[y+1][x], ground[y][x-1], ground[y][x+1]];
-        if (neighbors.some(n => n === TileType.OCEAN || n === TileType.DEEP_OCEAN) && hash(x, y) < 0.6) {
-          ground[y][x] = TileType.BEACH;
-        }
-      }
-      if (ground[y][x] === TileType.OCEAN) {
-        const neighbors = [ground[y-1]?.[x], ground[y+1]?.[x], ground[y][x-1], ground[y][x+1]];
-        if (neighbors.some(n => n !== undefined && n !== TileType.OCEAN && n !== TileType.DEEP_OCEAN) && hash(x + 1000, y) < 0.4) {
-          ground[y][x] = TileType.SHALLOW_WATER;
-        }
-      }
-    }
-  }
-
-  // 3. Natural features
-  addNaturalFeatures(ground);
-
-  // 4. Rivers (wider for bigger map)
-  for (const river of RIVERS) {
-    for (let i = 0; i < river.length - 1; i++) {
-      drawLine(ground, river[i][0], river[i][1], river[i + 1][0], river[i + 1][1], TileType.RIVER, i < 2 ? 2 : 3);
-    }
-  }
-
-  // 5. Settlements
-  const settlements = getAllSettlements();
-  for (const { settlement, biome } of settlements) {
-    placeSettlement(ground, settlement, biome);
-  }
-
-  // 6. Connect settlements with paths
-  for (let i = 0; i < settlements.length; i++) {
-    let nearest = -1, minDist = 60;
-    for (let j = 0; j < settlements.length; j++) {
-      if (i === j) continue;
-      const dx = settlements[i].settlement.tileX - settlements[j].settlement.tileX;
-      const dy = settlements[i].settlement.tileY - settlements[j].settlement.tileY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < minDist) { minDist = dist; nearest = j; }
-    }
-    if (nearest >= 0) {
-      const s1 = settlements[i].settlement, s2 = settlements[nearest].settlement;
-      drawLine(ground, s1.tileX, s1.tileY, s2.tileX, s2.tileY, TileType.PATH_DIRT, 1);
-    }
-  }
-
-  // 7. Campsites between distant settlements
-  placeCampsites(ground, settlements);
-
-  return { width: MAP_W, height: MAP_H, ground };
-}
-
-function addNaturalFeatures(ground: TileType[][]) {
-  // Lakes
-  const lakes = [[170,120],[176,126],[200,118],[88,264],[140,84]];
-  for (const [cx, cy] of lakes) {
-    const r = 3 + Math.floor(hash(cx, cy) * 3);
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dx = -r; dx <= r; dx++) {
-        if (dx * dx + dy * dy <= r * r) {
-          const tx = cx + dx, ty = cy + dy;
-          if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H &&
-              ground[ty][tx] !== TileType.OCEAN && ground[ty][tx] !== TileType.DEEP_OCEAN) {
-            ground[ty][tx] = dx * dx + dy * dy < (r - 1) * (r - 1) ? TileType.LAKE : TileType.SHALLOW_WATER;
-          }
-        }
-      }
-    }
-  }
-
-  // Rock clusters
-  for (let y = 0; y < MAP_H; y += 12) {
-    for (let x = 0; x < MAP_W; x += 12) {
-      if (hash(x * 7, y * 13) < 0.15) {
-        const tile = ground[y]?.[x];
-        if (tile === TileType.MOUNTAIN || tile === TileType.PLATEAU || tile === TileType.CLIFF) {
-          for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) setTile(ground, x + dx, y + dy, TileType.ROCKS);
-        }
-      }
-    }
-  }
-
-  // Ruins
-  const ruins = [[80,240],[112,108],[36,172],[120,276],[156,104],[56,220],[252,108]];
-  for (const [cx, cy] of ruins) {
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-      if (Math.abs(dx) + Math.abs(dy) <= 3) setTile(ground, cx + dx, cy + dy, TileType.RUINS);
-    }
-  }
-
-  // Pine forests in the north
-  for (let y = 16; y < 56; y++) for (let x = 60; x < 140; x++) {
-    if ((ground[y][x] === TileType.FOREST || ground[y][x] === TileType.TREE_BANYAN) && hash(x * 3, y * 5) < 0.5) {
-      ground[y][x] = TileType.TREE_PINE;
-    }
-  }
-
-  // Palm trees in the south
-  for (let y = 200; y < MAP_H; y++) for (let x = 0; x < MAP_W; x++) {
-    if ((ground[y][x] === TileType.FOREST || ground[y][x] === TileType.TREE_BANYAN) && hash(x * 9, y * 7) < 0.4) {
-      ground[y][x] = TileType.TREE_PALM;
-    }
-  }
-
-  // Flower patches
-  for (let y = 0; y < MAP_H; y += 8) for (let x = 0; x < MAP_W; x += 8) {
-    if (hash(x * 11, y * 17) < 0.08 && (ground[y][x] === TileType.PLAINS || ground[y][x] === TileType.TALL_GRASS)) {
-      for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) setTile(ground, x + dx, y + dy, TileType.FLOWERS);
-    }
-  }
-}
-
-function placeCampsites(ground: TileType[][], settlements: { settlement: SettlementDef; biome: BiomeType }[]) {
-  for (let i = 0; i < settlements.length; i++) {
-    for (let j = i + 1; j < settlements.length; j++) {
-      const s1 = settlements[i].settlement, s2 = settlements[j].settlement;
-      const dx = s2.tileX - s1.tileX, dy = s2.tileY - s1.tileY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist > 30 && dist < 80) {
-        const cx = Math.floor(s1.tileX + dx * 0.5), cy = Math.floor(s1.tileY + dy * 0.5);
-        if (cx >= 2 && cx < MAP_W - 2 && cy >= 2 && cy < MAP_H - 2) {
-          const tile = ground[cy][cx];
-          if (tile !== TileType.OCEAN && tile !== TileType.DEEP_OCEAN && tile !== TileType.MOUNTAIN && tile !== TileType.RIVER) {
-            setTile(ground, cx, cy, TileType.CAMPSITE);
-            setTile(ground, cx + 1, cy, TileType.CAMPSITE);
-            setTile(ground, cx, cy + 1, TileType.CAMPSITE);
-            setTile(ground, cx + 1, cy + 1, TileType.CAMPSITE);
-            setTile(ground, cx - 1, cy - 1, TileType.HUT);
-          }
-        }
-      }
-    }
-  }
-}
-
 export const PLAYER_START = { x: 104, y: 64 };
 
-// NPCs with behavior system
+// === NPCs ===
+
 export const WORLD_NPCS: NPC[] = [
   {
     id: 'delhi-advisor', name: 'Vizier Mirza',
@@ -690,6 +761,8 @@ export const WORLD_NPCS: NPC[] = [
     settlement: 'Bhopal',
   },
 ];
+
+// === MINIMAP COLORS ===
 
 export const MINIMAP_COLORS: Record<number, string> = {
   [TileType.OCEAN]: '#1a3a6a',
