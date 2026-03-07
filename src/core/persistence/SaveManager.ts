@@ -1,10 +1,28 @@
-import { File, Directory, Paths } from 'expo-file-system';
+import { Platform } from 'react-native';
 import { useGameStore, GameStore } from '../store/useGameStore';
 
 // Save/load game state using expo-file-system (new API).
+// On web, saving is a no-op (expo-file-system has no web implementation).
 
-const SAVE_DIR = new Directory(Paths.document, 'saves');
-const SAVE_FILE = new File(SAVE_DIR, 'game_save.json');
+let _saveDir: any;
+let _saveFile: any;
+
+function getSaveFile() {
+  if (_saveFile) return _saveFile;
+  // Lazy init so web doesn't crash on import
+  const { File, Directory, Paths } = require('expo-file-system');
+  _saveDir = new Directory(Paths.document, 'saves');
+  _saveFile = new File(_saveDir, 'game_save.json');
+  return _saveFile;
+}
+
+function getSaveDir() {
+  if (_saveDir) return _saveDir;
+  getSaveFile();
+  return _saveDir;
+}
+
+const isWeb = Platform.OS === 'web';
 
 interface SaveData {
   version: 1;
@@ -59,17 +77,18 @@ function extractSaveData(state: GameStore): SaveData {
 }
 
 export async function saveGame(): Promise<boolean> {
+  if (isWeb) return false;
   try {
     const state = useGameStore.getState();
     const data = extractSaveData(state);
     const json = JSON.stringify(data);
 
-    // Ensure directory exists
-    if (!SAVE_DIR.exists) {
-      SAVE_DIR.create({ intermediates: true });
+    const dir = getSaveDir();
+    if (!dir.exists) {
+      dir.create({ intermediates: true });
     }
 
-    SAVE_FILE.write(json);
+    getSaveFile().write(json);
     return true;
   } catch (e) {
     console.warn('Save failed:', e);
@@ -78,10 +97,12 @@ export async function saveGame(): Promise<boolean> {
 }
 
 export async function loadGame(): Promise<boolean> {
+  if (isWeb) return false;
   try {
-    if (!SAVE_FILE.exists) return false;
+    const file = getSaveFile();
+    if (!file.exists) return false;
 
-    const json = await SAVE_FILE.text();
+    const json = await file.text();
     const data: SaveData = JSON.parse(json);
     if (data.version !== 1) return false;
 
@@ -112,17 +133,20 @@ export async function loadGame(): Promise<boolean> {
 }
 
 export async function hasSaveFile(): Promise<boolean> {
+  if (isWeb) return false;
   try {
-    return SAVE_FILE.exists;
+    return getSaveFile().exists;
   } catch {
     return false;
   }
 }
 
 export async function deleteSave(): Promise<void> {
+  if (isWeb) return;
   try {
-    if (SAVE_FILE.exists) {
-      SAVE_FILE.delete();
+    const file = getSaveFile();
+    if (file.exists) {
+      file.delete();
     }
   } catch {
     // ignore

@@ -12,22 +12,45 @@ const BTN_SIZE = 50;
 
 const DPad: React.FC<DPadProps> = ({ onDirectionChange }) => {
   const currentDir = useRef<Direction | null>(null);
-  const layoutRef = useRef({ x: 0, y: 0 });
+  const layoutRef = useRef({ x: 0, y: 0, w: DPAD_SIZE, h: DPAD_SIZE });
 
   const onLayout = useCallback((e: LayoutChangeEvent) => {
+    // Use layout event for dimensions, measureInWindow for position
+    const { width, height } = e.nativeEvent.layout;
+    layoutRef.current.w = width;
+    layoutRef.current.h = height;
     e.target.measureInWindow((x, y) => {
-      layoutRef.current = { x, y };
+      if (x != null && y != null) {
+        layoutRef.current.x = x;
+        layoutRef.current.y = y;
+      }
     });
   }, []);
 
   const getDirection = useCallback((pageX: number, pageY: number): Direction | null => {
-    // Convert page coordinates to local coordinates
-    const x = pageX - layoutRef.current.x;
-    const y = pageY - layoutRef.current.y;
-    const centerX = DPAD_SIZE / 2;
-    const centerY = DPAD_SIZE / 2;
-    const dx = x - centerX;
-    const dy = y - centerY;
+    const { x, y, w, h } = layoutRef.current;
+    const localX = pageX - x;
+    const localY = pageY - y;
+    const centerX = w / 2;
+    const centerY = h / 2;
+    const dx = localX - centerX;
+    const dy = localY - centerY;
+    const deadZone = 12;
+
+    if (Math.abs(dx) < deadZone && Math.abs(dy) < deadZone) return null;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return dx > 0 ? 'right' : 'left';
+    } else {
+      return dy > 0 ? 'down' : 'up';
+    }
+  }, []);
+
+  const getDirectionFromLocal = useCallback((localX: number, localY: number): Direction | null => {
+    const centerX = layoutRef.current.w / 2;
+    const centerY = layoutRef.current.h / 2;
+    const dx = localX - centerX;
+    const dy = localY - centerY;
     const deadZone = 12;
 
     if (Math.abs(dx) < deadZone && Math.abs(dy) < deadZone) return null;
@@ -44,14 +67,19 @@ const DPad: React.FC<DPadProps> = ({ onDirectionChange }) => {
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
-        const { pageX, pageY } = evt.nativeEvent;
-        const dir = getDirection(pageX, pageY);
+        // Prefer locationX/Y (local coords) — works reliably on web
+        const { locationX, locationY, pageX, pageY } = evt.nativeEvent;
+        const dir = (locationX != null && locationY != null)
+          ? getDirectionFromLocal(locationX, locationY)
+          : getDirection(pageX, pageY);
         currentDir.current = dir;
         onDirectionChange(dir);
       },
       onPanResponderMove: (evt) => {
-        const { pageX, pageY } = evt.nativeEvent;
-        const dir = getDirection(pageX, pageY);
+        const { locationX, locationY, pageX, pageY } = evt.nativeEvent;
+        const dir = (locationX != null && locationY != null)
+          ? getDirectionFromLocal(locationX, locationY)
+          : getDirection(pageX, pageY);
         if (dir !== currentDir.current) {
           currentDir.current = dir;
           onDirectionChange(dir);
