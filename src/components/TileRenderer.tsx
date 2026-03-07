@@ -1,12 +1,15 @@
 import React, { memo, useMemo } from 'react';
-import { View } from 'react-native';
+import { View, Image } from 'react-native';
 import { TileMapData } from '../types';
 import { SCALED_TILE, VIEWPORT_TILES_X, VIEWPORT_TILES_Y, GAME_AREA_HEIGHT, SCREEN_WIDTH, TILE_COLORS, TILE_DETAIL } from '../engine/constants';
+import { TILESET } from '../engine/SpriteSheet';
+import { getTileSprite } from '../engine/tileSprites';
 
 interface TileRendererProps {
   map: TileMapData;
   cameraX: number;
   cameraY: number;
+  useSprites?: boolean;
 }
 
 const DetailView: React.FC<{ type: string; color: string; size: number }> = memo(({ type, color, size }) => {
@@ -36,9 +39,7 @@ const DetailView: React.FC<{ type: string; color: string; size: number }> = memo
       );
     case 'triangle':
       return (
-        <>
-          <View style={{ position: 'absolute', left: size / 3, top: size / 6, width: 0, height: 0, borderLeftWidth: size / 6, borderRightWidth: size / 6, borderBottomWidth: size / 3, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: color }} />
-        </>
+        <View style={{ position: 'absolute', left: size / 3, top: size / 6, width: 0, height: 0, borderLeftWidth: size / 6, borderRightWidth: size / 6, borderBottomWidth: size / 3, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: color }} />
       );
     case 'cross':
       return (
@@ -52,7 +53,30 @@ const DetailView: React.FC<{ type: string; color: string; size: number }> = memo
   }
 });
 
-const TileRenderer: React.FC<TileRendererProps> = ({ map, cameraX, cameraY }) => {
+// Sprite tile: renders a frame from the tileset sprite sheet
+const SpriteTile: React.FC<{ col: number; row: number; size: number }> = memo(({ col, row, size }) => {
+  const srcX = col * (TILESET.frameWidth + TILESET.margin);
+  const srcY = row * (TILESET.frameHeight + TILESET.margin);
+  const scale = size / TILESET.frameWidth;
+
+  return (
+    <View style={{ width: size, height: size, overflow: 'hidden' }}>
+      <Image
+        source={TILESET.source}
+        style={{
+          position: 'absolute',
+          width: TILESET.sheetWidth * scale,
+          height: TILESET.sheetHeight * scale,
+          left: -srcX * scale,
+          top: -srcY * scale,
+        }}
+        resizeMode="stretch"
+      />
+    </View>
+  );
+});
+
+const TileRenderer: React.FC<TileRendererProps> = ({ map, cameraX, cameraY, useSprites = true }) => {
   const offsetX = cameraX - SCREEN_WIDTH / 2;
   const offsetY = cameraY - GAME_AREA_HEIGHT / 2;
 
@@ -71,28 +95,48 @@ const TileRenderer: React.FC<TileRendererProps> = ({ map, cameraX, cameraY }) =>
 
         const screenX = x * SCALED_TILE - offsetX;
         const screenY = y * SCALED_TILE - offsetY;
-        const detail = TILE_DETAIL[tile];
 
-        result.push(
-          <View
-            key={`${x}-${y}`}
-            style={{
-              position: 'absolute',
-              left: screenX,
-              top: screenY,
-              width: SCALED_TILE,
-              height: SCALED_TILE,
-              backgroundColor: TILE_COLORS[tile] || '#ff00ff',
-            }}
-          >
-            {detail && <DetailView type={detail.type} color={detail.color} size={SCALED_TILE} />}
-          </View>
-        );
+        if (useSprites) {
+          const [col, row] = getTileSprite(tile, x, y);
+          result.push(
+            <View
+              key={`${x}-${y}`}
+              style={{
+                position: 'absolute',
+                left: screenX,
+                top: screenY,
+                width: SCALED_TILE,
+                height: SCALED_TILE,
+                // Keep color background as fallback while image loads
+                backgroundColor: TILE_COLORS[tile] || '#ff00ff',
+              }}
+            >
+              <SpriteTile col={col} row={row} size={SCALED_TILE} />
+            </View>
+          );
+        } else {
+          const detail = TILE_DETAIL[tile];
+          result.push(
+            <View
+              key={`${x}-${y}`}
+              style={{
+                position: 'absolute',
+                left: screenX,
+                top: screenY,
+                width: SCALED_TILE,
+                height: SCALED_TILE,
+                backgroundColor: TILE_COLORS[tile] || '#ff00ff',
+              }}
+            >
+              {detail && <DetailView type={detail.type} color={detail.color} size={SCALED_TILE} />}
+            </View>
+          );
+        }
       }
     }
 
     return result;
-  }, [startTileX, startTileY, endTileX, endTileY, offsetX, offsetY, map]);
+  }, [startTileX, startTileY, endTileX, endTileY, offsetX, offsetY, map, useSprites]);
 
   return (
     <View style={{ position: 'absolute', width: SCREEN_WIDTH, height: GAME_AREA_HEIGHT }}>

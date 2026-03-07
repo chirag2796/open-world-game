@@ -1,7 +1,9 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { Position, Direction } from '../types';
 import { SCALED_TILE, GAME_AREA_HEIGHT, SCREEN_WIDTH, PALETTE } from '../engine/constants';
+import { CHARSHEET } from '../engine/SpriteSheet';
+import { PLAYER_SPRITE, NPC_SPRITES, getCharSprite } from '../engine/charSprites';
 
 interface NPCRenderData {
   id: string;
@@ -20,41 +22,64 @@ interface EntityRendererProps {
   animFrame: number;
   cameraX: number;
   cameraY: number;
+  useSprites?: boolean;
 }
 
-// 4-frame walk cycle: 0=stand, 1=left step, 2=stand, 3=right step
+// Sprite-based character: renders a frame from the character sprite sheet
+const CharSprite: React.FC<{
+  col: number;
+  row: number;
+  size: number;
+}> = memo(({ col, row, size }) => {
+  const srcX = col * (CHARSHEET.frameWidth + CHARSHEET.margin);
+  const srcY = row * (CHARSHEET.frameHeight + CHARSHEET.margin);
+  const scale = size / CHARSHEET.frameWidth;
+
+  return (
+    <View style={{ width: size, height: size, overflow: 'hidden' }}>
+      <Image
+        source={CHARSHEET.source}
+        style={{
+          position: 'absolute',
+          width: CHARSHEET.sheetWidth * scale,
+          height: CHARSHEET.sheetHeight * scale,
+          left: -srcX * scale,
+          top: -srcY * scale,
+        }}
+        resizeMode="stretch"
+      />
+    </View>
+  );
+});
+
+// Fallback View-based character (used when sprites not available)
 const CharacterView: React.FC<{
   bodyColor: string;
   headColor: string;
   detailColor: string;
   size: number;
-  name?: string;
   flipX: boolean;
   walkFrame: number;
-}> = memo(({ bodyColor, headColor, detailColor, size, name, flipX, walkFrame }) => {
+}> = memo(({ bodyColor, headColor, detailColor, size, flipX, walkFrame }) => {
   const half = size / 2;
   const quarter = size / 4;
-  // 4-frame walk: frames 0,2 = neutral, 1 = left step, 3 = right step
   const leftLeg = walkFrame === 1 ? 3 : walkFrame === 3 ? -2 : 0;
   const rightLeg = walkFrame === 1 ? -2 : walkFrame === 3 ? 3 : 0;
   const bodyBob = (walkFrame === 1 || walkFrame === 3) ? -1 : 0;
 
   return (
     <View style={{ width: size, height: size }}>
-      {/* Head */}
       <View style={{
         position: 'absolute', left: quarter, top: 2 + bodyBob,
         width: half, height: half - 2,
         backgroundColor: PALETTE.skin, borderRadius: 4,
       }} />
-      {/* Hair/hat */}
       <View style={{
         position: 'absolute', left: quarter, top: bodyBob,
         width: half, height: quarter,
         backgroundColor: detailColor,
         borderTopLeftRadius: 4, borderTopRightRadius: 4,
       }} />
-      {/* Eyes */}
       <View style={{
         position: 'absolute', left: quarter + 4, top: quarter - 2 + bodyBob,
         width: 4, height: 4, backgroundColor: PALETTE.black, borderRadius: 2,
@@ -63,45 +88,33 @@ const CharacterView: React.FC<{
         position: 'absolute', left: half + 4, top: quarter - 2 + bodyBob,
         width: 4, height: 4, backgroundColor: PALETTE.black, borderRadius: 2,
       }} />
-      {/* Body */}
       <View style={{
         position: 'absolute', left: quarter - 2, top: half + bodyBob,
         width: half + 4, height: half - 6,
         backgroundColor: bodyColor, borderRadius: 2,
       }} />
-      {/* Belt/detail */}
       <View style={{
         position: 'absolute', left: quarter, top: half + quarter - 4 + bodyBob,
         width: half, height: 4, backgroundColor: headColor,
       }} />
-      {/* Left leg */}
       <View style={{
         position: 'absolute', left: quarter + 2, bottom: 0 + leftLeg,
         width: 8, height: 10, backgroundColor: PALETTE.woodDark, borderRadius: 2,
       }} />
-      {/* Right leg */}
       <View style={{
         position: 'absolute', right: quarter + 2, bottom: 0 + rightLeg,
         width: 8, height: 10, backgroundColor: PALETTE.woodDark, borderRadius: 2,
       }} />
-      {/* Left arm */}
       <View style={{
         position: 'absolute', left: quarter - 5, top: half + 2 + bodyBob,
         width: 5, height: half - 10,
         backgroundColor: bodyColor, borderRadius: 2,
       }} />
-      {/* Right arm */}
       <View style={{
         position: 'absolute', right: quarter - 5, top: half + 2 + bodyBob,
         width: 5, height: half - 10,
         backgroundColor: bodyColor, borderRadius: 2,
       }} />
-      {/* Name tag */}
-      {name && (
-        <View style={styles.nameTag}>
-          <Text style={styles.nameText}>{name}</Text>
-        </View>
-      )}
     </View>
   );
 });
@@ -134,11 +147,23 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
   animFrame,
   cameraX,
   cameraY,
+  useSprites = true,
 }) => {
   const offsetX = cameraX - SCREEN_WIDTH / 2;
   const offsetY = cameraY - GAME_AREA_HEIGHT / 2;
 
-  const entities: { id: string; screenX: number; screenY: number; name?: string; colors: typeof PLAYER_COLORS; flipX: boolean; zIndex: number; walkFrame: number }[] = [];
+  const entities: {
+    id: string;
+    screenX: number;
+    screenY: number;
+    name?: string;
+    colors: typeof PLAYER_COLORS;
+    flipX: boolean;
+    zIndex: number;
+    walkFrame: number;
+    dir: Direction;
+    spriteBase: [number, number] | null;
+  }[] = [];
 
   for (const npc of npcData) {
     const sx = npc.px - offsetX;
@@ -153,6 +178,8 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
         flipX: npc.dir === 'left',
         zIndex: Math.floor(npc.py / SCALED_TILE),
         walkFrame: npc.animFrame,
+        dir: npc.dir,
+        spriteBase: NPC_SPRITES[npc.id] || null,
       });
     }
   }
@@ -167,34 +194,50 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
     flipX: playerDir === 'left',
     zIndex: Math.floor(playerPos.y / SCALED_TILE),
     walkFrame: playerMoving ? animFrame : 0,
+    dir: playerDir,
+    spriteBase: PLAYER_SPRITE,
   });
 
   entities.sort((a, b) => a.zIndex - b.zIndex);
 
   return (
     <View style={{ position: 'absolute', width: SCREEN_WIDTH, height: GAME_AREA_HEIGHT }} pointerEvents="none">
-      {entities.map((entity) => (
-        <View
-          key={entity.id}
-          style={{
-            position: 'absolute',
-            left: entity.screenX,
-            top: entity.screenY,
-            zIndex: entity.zIndex + 100,
-            transform: entity.flipX ? [{ scaleX: -1 }] : [],
-          }}
-        >
-          <CharacterView
-            bodyColor={entity.colors.body}
-            headColor={entity.colors.head}
-            detailColor={entity.colors.detail}
-            size={SCALED_TILE}
-            name={entity.name}
-            flipX={entity.flipX}
-            walkFrame={entity.walkFrame}
-          />
-        </View>
-      ))}
+      {entities.map((entity) => {
+        const spriteCoord = entity.spriteBase
+          ? getCharSprite(entity.spriteBase, entity.dir, entity.walkFrame)
+          : null;
+
+        return (
+          <View
+            key={entity.id}
+            style={{
+              position: 'absolute',
+              left: entity.screenX,
+              top: entity.screenY,
+              zIndex: entity.zIndex + 100,
+              transform: entity.flipX ? [{ scaleX: -1 }] : [],
+            }}
+          >
+            {useSprites && spriteCoord ? (
+              <CharSprite col={spriteCoord[0]} row={spriteCoord[1]} size={SCALED_TILE} />
+            ) : (
+              <CharacterView
+                bodyColor={entity.colors.body}
+                headColor={entity.colors.head}
+                detailColor={entity.colors.detail}
+                size={SCALED_TILE}
+                flipX={entity.flipX}
+                walkFrame={entity.walkFrame}
+              />
+            )}
+            {entity.name && (
+              <View style={styles.nameTag}>
+                <Text style={styles.nameText}>{entity.name}</Text>
+              </View>
+            )}
+          </View>
+        );
+      })}
     </View>
   );
 };

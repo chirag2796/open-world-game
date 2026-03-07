@@ -6,6 +6,7 @@ import { useInventory } from '../engine/useInventory';
 import { useBattle } from '../engine/useBattle';
 import { useNPCAI } from '../engine/useNPCAI';
 import { useSound } from '../engine/useSound';
+import { useWeather } from '../engine/useWeather';
 import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE } from '../engine/constants';
 import TileRenderer from './TileRenderer';
 import EntityRenderer from './EntityRenderer';
@@ -15,6 +16,8 @@ import DialogBox from './DialogBox';
 import MiniMap from './MiniMap';
 import InventoryScreen from './InventoryScreen';
 import BattleScreen from './BattleScreen';
+import WeatherEffect from './WeatherEffect';
+import DayNightCycle from './DayNightCycle';
 
 const GameScreen: React.FC = () => {
   const worldMap = useMemo(() => generateIndiaMap(), []);
@@ -61,6 +64,8 @@ const GameScreen: React.FC = () => {
   const playerTileY = Math.floor(gameState.playerPos.y / SCALED_TILE);
   const stateName = getStateName(playerTileX, playerTileY);
   const settlement = getNearestSettlement(playerTileX, playerTileY);
+  const currentBiome = getBiomeAt(playerTileX, playerTileY);
+  const weather = useWeather(currentBiome);
 
   const npcRenderData = useMemo(() => {
     const positions = getNPCPositions();
@@ -117,6 +122,8 @@ const GameScreen: React.FC = () => {
           cameraX={gameState.cameraX}
           cameraY={gameState.cameraY}
         />
+        <WeatherEffect weather={weather} />
+        <DayNightCycle />
         <MiniMap
           map={worldMap}
           playerTileX={playerTileX}

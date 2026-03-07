@@ -192,4 +192,5 @@ export interface BattleState {
   playerXP: number;
   playerLevel: number;
   playerGold: number;
+  lastAction: BattleAction | null;
 }

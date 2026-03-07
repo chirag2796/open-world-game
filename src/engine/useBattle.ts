@@ -28,6 +28,7 @@ export function useBattle(
     playerXP: 0,
     playerLevel: 1,
     playerGold: 20,
+    lastAction: null,
   });
 
   const battleRef = useRef(battle);
@@ -74,6 +75,7 @@ export function useBattle(
           phase: 'result',
           message: 'You escaped safely!',
           result: 'run',
+          lastAction: 'run',
         }));
       } else {
         setBattle(prev => ({
@@ -81,6 +83,7 @@ export function useBattle(
           phase: 'animate',
           message: "Couldn't escape!",
           isDefending: false,
+          lastAction: 'run',
         }));
         setTimeout(() => doEnemyTurn(), 800);
       }
@@ -93,6 +96,7 @@ export function useBattle(
         phase: 'animate',
         message: 'You brace for impact!',
         isDefending: true,
+        lastAction: 'defend',
       }));
       setTimeout(() => doEnemyTurn(), 800);
       return;
@@ -117,6 +121,7 @@ export function useBattle(
           phase: 'animate',
           message: `Used ${def.name}! Restored ${newHP - prev.playerHP} HP.`,
           isDefending: false,
+          lastAction: 'item',
         };
       });
       setTimeout(() => doEnemyTurn(), 1000);
@@ -150,6 +155,7 @@ export function useBattle(
             ? `${enemy.name} defeated! +${xpGain}XP +${goldGain}G\nLevel Up! You are now level ${newLevel}!`
             : `${enemy.name} defeated! +${xpGain}XP +${goldGain}G`,
           result: 'win',
+          lastAction: 'attack',
           playerXP: finalXP,
           playerLevel: newLevel,
           playerGold: prev.playerGold + goldGain,
@@ -164,6 +170,7 @@ export function useBattle(
         phase: 'animate',
         message: `You dealt ${actualDmg} damage!`,
         isDefending: false,
+        lastAction: 'attack',
       };
     });
 

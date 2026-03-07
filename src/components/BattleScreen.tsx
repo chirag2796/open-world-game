@@ -4,6 +4,7 @@ import { BattleState, BattleAction } from '../types';
 import { ITEMS } from '../data/items';
 import { InventoryState } from '../engine/useInventory';
 import { PALETTE, SCREEN_WIDTH, SCREEN_HEIGHT } from '../engine/constants';
+import ParticleEffect, { ParticleType } from './ParticleEffect';
 
 interface BattleScreenProps {
   battle: BattleState;
@@ -90,22 +91,55 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
   const [showItems, setShowItems] = useState(false);
   const [enemyShake, setEnemyShake] = useState(false);
   const [playerFlash, setPlayerFlash] = useState(false);
+  const [particleType, setParticleType] = useState<ParticleType | null>(null);
+  const [particlePos, setParticlePos] = useState({ x: 0, y: 0 });
+  const screenFlash = useRef(new Animated.Value(0)).current;
   const prevPhaseRef = useRef(battle.phase);
+  const prevActionRef = useRef(battle.lastAction);
 
   // Trigger animations on phase changes
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = battle.phase;
+    const lastAction = battle.lastAction;
+    const prevAction = prevActionRef.current;
+    prevActionRef.current = lastAction;
 
     if (battle.phase === 'animate' && prev === 'select') {
-      // Player attacked
+      // Player attacked enemy
       setEnemyShake(true);
       setTimeout(() => setEnemyShake(false), 400);
+
+      if (lastAction === 'attack') {
+        setParticlePos({ x: SCREEN_WIDTH - 70, y: 110 });
+        setParticleType('slash');
+        // Screen flash
+        Animated.sequence([
+          Animated.timing(screenFlash, { toValue: 0.3, duration: 60, useNativeDriver: true }),
+          Animated.timing(screenFlash, { toValue: 0, duration: 200, useNativeDriver: true }),
+        ]).start();
+      } else if (lastAction === 'defend') {
+        setParticlePos({ x: 60, y: SCREEN_HEIGHT * 0.35 });
+        setParticleType('defend');
+      } else if (lastAction === 'item') {
+        setParticlePos({ x: 60, y: SCREEN_HEIGHT * 0.35 });
+        setParticleType('heal');
+      }
     }
     if (battle.phase === 'select' && prev === 'animate') {
-      // Enemy attacked
+      // Enemy attacked player
       setPlayerFlash(true);
       setTimeout(() => setPlayerFlash(false), 400);
+      setParticlePos({ x: 60, y: SCREEN_HEIGHT * 0.35 });
+      setParticleType('hit');
+      Animated.sequence([
+        Animated.timing(screenFlash, { toValue: 0.2, duration: 50, useNativeDriver: true }),
+        Animated.timing(screenFlash, { toValue: 0, duration: 150, useNativeDriver: true }),
+      ]).start();
+    }
+    if (battle.phase === 'result' && battle.result === 'win') {
+      setParticlePos({ x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT * 0.3 });
+      setParticleType('levelup');
     }
   }, [battle.phase]);
 
@@ -210,6 +244,20 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
           </View>
         )}
       </View>
+
+      {/* Particle effects */}
+      <ParticleEffect
+        type={particleType}
+        x={particlePos.x}
+        y={particlePos.y}
+        onComplete={() => setParticleType(null)}
+      />
+
+      {/* Screen flash overlay */}
+      <Animated.View
+        style={[styles.screenFlash, { opacity: screenFlash }]}
+        pointerEvents="none"
+      />
 
       {/* Gold display */}
       <View style={styles.goldBar}>
@@ -526,6 +574,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     fontFamily: 'monospace',
+  },
+  screenFlash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#ffffff',
+    zIndex: 4000,
   },
 });
 
