@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, StatusBar, Text } from 'react-native';
-import { VILLAGE_MAP, VILLAGE_NPCS, PLAYER_START } from '../data/village-map';
+import { generateIndiaMap, WORLD_NPCS, PLAYER_START, getStateName, getNearestSettlement } from '../data/india-map';
 import { useGameLoop } from '../engine/useGameLoop';
 import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE } from '../engine/constants';
 import TileRenderer from './TileRenderer';
@@ -8,30 +8,35 @@ import EntityRenderer from './EntityRenderer';
 import DPad from './DPad';
 import ActionButton from './ActionButton';
 import DialogBox from './DialogBox';
+import MiniMap from './MiniMap';
 
 const GameScreen: React.FC = () => {
+  // Generate map once
+  const worldMap = useMemo(() => generateIndiaMap(), []);
+
   const { gameState, setDirection, interact } = useGameLoop(
-    VILLAGE_MAP,
-    VILLAGE_NPCS,
+    worldMap,
+    WORLD_NPCS,
     PLAYER_START,
   );
 
   const playerTileX = Math.floor(gameState.playerPos.x / SCALED_TILE);
   const playerTileY = Math.floor(gameState.playerPos.y / SCALED_TILE);
+  const stateName = getStateName(playerTileX, playerTileY);
+  const settlement = getNearestSettlement(playerTileX, playerTileY);
 
   return (
     <View style={styles.container}>
       <StatusBar hidden />
 
-      {/* Game viewport */}
       <View style={styles.gameArea}>
         <TileRenderer
-          map={VILLAGE_MAP}
+          map={worldMap}
           cameraX={gameState.cameraX}
           cameraY={gameState.cameraY}
         />
         <EntityRenderer
-          npcs={VILLAGE_NPCS}
+          npcs={WORLD_NPCS}
           playerPos={gameState.playerPos}
           playerDir={gameState.playerDir}
           playerMoving={gameState.playerMoving}
@@ -39,26 +44,27 @@ const GameScreen: React.FC = () => {
           cameraX={gameState.cameraX}
           cameraY={gameState.cameraY}
         />
-
-        {/* Dialog overlay */}
+        <MiniMap
+          map={worldMap}
+          playerTileX={playerTileX}
+          playerTileY={playerTileY}
+        />
         <DialogBox dialog={gameState.dialog} onAdvance={interact} />
       </View>
 
-      {/* Controls area */}
       <View style={styles.controlsArea}>
-        {/* Top bar with info */}
         <View style={styles.infoBar}>
-          <Text style={styles.infoText}>Willowdale Village</Text>
+          <View>
+            <Text style={styles.infoText}>{settlement || stateName}</Text>
+            {settlement && <Text style={styles.stateText}>{stateName}</Text>}
+          </View>
           <Text style={styles.coordText}>({playerTileX}, {playerTileY})</Text>
         </View>
 
         <View style={styles.controlsRow}>
-          {/* D-Pad on the left */}
           <View style={styles.dpadContainer}>
             <DPad onDirectionChange={setDirection} />
           </View>
-
-          {/* Action buttons on the right */}
           <View style={styles.buttonsContainer}>
             <ActionButton onPress={interact} label="A" />
             <View style={styles.buttonLabel}>
@@ -80,7 +86,7 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: GAME_AREA_HEIGHT,
     overflow: 'hidden',
-    backgroundColor: PALETTE.grassDark,
+    backgroundColor: '#1a3a6a',
   },
   controlsArea: {
     height: CONTROLS_HEIGHT,
@@ -93,18 +99,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderBottomWidth: 1,
     borderBottomColor: PALETTE.uiDark,
   },
   infoText: {
     color: PALETTE.yellow,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     fontFamily: 'monospace',
     textShadowColor: PALETTE.black,
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 0,
+  },
+  stateText: {
+    color: PALETTE.lightGray,
+    fontSize: 10,
+    fontFamily: 'monospace',
   },
   coordText: {
     color: PALETTE.lightGray,

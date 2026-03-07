@@ -120,9 +120,13 @@ const CharacterView: React.FC<{
 
 // Character color configs
 const NPC_COLORS: Record<string, { body: string; head: string; detail: string }> = {
-  elder: { body: '#803030', head: '#e0c020', detail: '#a0a0a0' },
-  merchant: { body: '#f0f0e0', head: '#208020', detail: '#e08020' },
-  guard: { body: '#808080', head: '#606060', detail: '#808080' },
+  'delhi-advisor': { body: '#803030', head: '#e0c020', detail: '#a0a0a0' },
+  'agra-merchant': { body: '#f0f0e0', head: '#208020', detail: '#e08020' },
+  'jaipur-guard': { body: '#808080', head: '#606060', detail: '#c08040' },
+  'varanasi-scholar': { body: '#e0a020', head: '#802020', detail: '#f0e0a0' },
+  'guwahati-sage': { body: '#206020', head: '#404040', detail: '#80c080' },
+  'hampi-priest': { body: '#f0e0c0', head: '#c04040', detail: '#e08020' },
+  'kozhikode-trader': { body: '#2060a0', head: '#e0c060', detail: '#40a0e0' },
 };
 
 const PLAYER_COLORS = { body: '#30a030', head: '#2828a0', detail: '#3080e0' };

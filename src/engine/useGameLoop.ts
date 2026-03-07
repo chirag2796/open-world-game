@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { Direction, Position, NPC, SOLID_TILES, TileMapData, DialogState } from '../types';
-import { SCALED_TILE, MOVE_SPEED, TICK_MS, INTERACT_RANGE, TILE_SIZE, SCALE } from './constants';
+import { SCALED_TILE, MOVE_SPEED, TICK_MS, INTERACT_RANGE, SCALE } from './constants';
 
 interface GameState {
   playerPos: Position;       // pixel position
@@ -50,12 +50,8 @@ export function useGameLoop(
       if (tileX < 0 || tileX >= map.width || tileY < 0 || tileY >= map.height) {
         return false;
       }
-      // Check ground layer
-      const groundTile = map.layers.ground[tileY][tileX];
-      if (SOLID_TILES.has(groundTile)) return false;
-      // Check objects layer
-      const objTile = map.layers.objects[tileY]?.[tileX];
-      if (objTile !== null && objTile !== undefined && SOLID_TILES.has(objTile)) return false;
+      const tile = map.ground[tileY][tileX];
+      if (SOLID_TILES.has(tile)) return false;
     }
 
     // Check NPC collision
