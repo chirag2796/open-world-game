@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
-import { View, StyleSheet, StatusBar, Text } from 'react-native';
+import React, { useMemo, useState, useCallback } from 'react';
+import { View, StyleSheet, StatusBar, Text, TouchableOpacity } from 'react-native';
 import { generateIndiaMap, WORLD_NPCS, PLAYER_START, getStateName, getNearestSettlement } from '../data/india-map';
 import { useGameLoop } from '../engine/useGameLoop';
+import { useInventory } from '../engine/useInventory';
 import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE } from '../engine/constants';
 import TileRenderer from './TileRenderer';
 import EntityRenderer from './EntityRenderer';
@@ -9,10 +10,11 @@ import DPad from './DPad';
 import ActionButton from './ActionButton';
 import DialogBox from './DialogBox';
 import MiniMap from './MiniMap';
+import InventoryScreen from './InventoryScreen';
 
 const GameScreen: React.FC = () => {
-  // Generate map once
   const worldMap = useMemo(() => generateIndiaMap(), []);
+  const [showInventory, setShowInventory] = useState(false);
 
   const { gameState, setDirection, interact } = useGameLoop(
     worldMap,
@@ -20,10 +22,17 @@ const GameScreen: React.FC = () => {
     PLAYER_START,
   );
 
+  const { inventory, equipItem, unequipItem, removeItem } = useInventory();
+
   const playerTileX = Math.floor(gameState.playerPos.x / SCALED_TILE);
   const playerTileY = Math.floor(gameState.playerPos.y / SCALED_TILE);
   const stateName = getStateName(playerTileX, playerTileY);
   const settlement = getNearestSettlement(playerTileX, playerTileY);
+
+  const handleUseItem = useCallback((itemId: string) => {
+    // For now just consume the item — effect system can be added later
+    removeItem(itemId, 1);
+  }, [removeItem]);
 
   return (
     <View style={styles.container}>
@@ -66,13 +75,35 @@ const GameScreen: React.FC = () => {
             <DPad onDirectionChange={setDirection} />
           </View>
           <View style={styles.buttonsContainer}>
-            <ActionButton onPress={interact} label="A" />
-            <View style={styles.buttonLabel}>
-              <Text style={styles.buttonLabelText}>TALK</Text>
+            <View style={styles.buttonRow}>
+              <View style={styles.buttonWithLabel}>
+                <ActionButton onPress={interact} label="A" />
+                <Text style={styles.buttonLabelText}>TALK</Text>
+              </View>
+              <View style={styles.buttonWithLabel}>
+                <TouchableOpacity
+                  style={styles.bagButton}
+                  onPress={() => setShowInventory(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.bagButtonText}>B</Text>
+                </TouchableOpacity>
+                <Text style={styles.buttonLabelText}>BAG</Text>
+              </View>
             </View>
           </View>
         </View>
       </View>
+
+      {showInventory && (
+        <InventoryScreen
+          inventory={inventory}
+          onClose={() => setShowInventory(false)}
+          onEquip={equipItem}
+          onUnequip={unequipItem}
+          onUse={handleUseItem}
+        />
+      )}
     </View>
   );
 };
@@ -136,14 +167,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonLabel: {
-    marginTop: 6,
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  buttonWithLabel: {
+    alignItems: 'center',
   },
   buttonLabelText: {
     color: PALETTE.lightGray,
     fontSize: 10,
     fontFamily: 'monospace',
     letterSpacing: 2,
+    marginTop: 6,
+  },
+  bagButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#4060a0',
+    borderWidth: 3,
+    borderColor: '#6080c0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bagButtonText: {
+    color: PALETTE.white,
+    fontSize: 22,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
   },
 });
 

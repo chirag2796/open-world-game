@@ -87,3 +87,36 @@ export interface DialogState {
   lines: string[];
   currentLine: number;
 }
+
+// Inventory system
+export type ItemCategory = 'weapons' | 'armor' | 'items' | 'key_items';
+
+export type EquipSlot = 'weapon' | 'head' | 'body' | 'legs' | 'accessory';
+
+export interface ItemDef {
+  id: string;
+  name: string;
+  category: ItemCategory;
+  description: string;
+  icon: string;
+  stackable: boolean;
+  usable: boolean;
+  equipSlot?: EquipSlot;
+  attack?: number;
+  defense?: number;
+  effect?: string;
+  value: number;
+}
+
+export interface InventorySlot {
+  itemId: string;
+  quantity: number;
+}
+
+export interface EquipState {
+  weapon: string | null;
+  head: string | null;
+  body: string | null;
+  legs: string | null;
+  accessory: string | null;
+}
