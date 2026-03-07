@@ -1,6 +1,6 @@
 import React from 'react';
-import GameScreen from './src/components/GameScreen';
+import WorldScreen from './src/features/world/WorldScreen';
 
 export default function App() {
-  return <GameScreen />;
+  return <WorldScreen />;
 }
