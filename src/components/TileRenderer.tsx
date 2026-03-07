@@ -34,6 +34,19 @@ const DetailView: React.FC<{ type: string; color: string; size: number }> = memo
       return (
         <View style={{ position: 'absolute', left: size / 4, top: size / 4, width: size / 2, height: size / 2, backgroundColor: color, borderRadius: 4 }} />
       );
+    case 'triangle':
+      return (
+        <>
+          <View style={{ position: 'absolute', left: size / 3, top: size / 6, width: 0, height: 0, borderLeftWidth: size / 6, borderRightWidth: size / 6, borderBottomWidth: size / 3, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: color }} />
+        </>
+      );
+    case 'cross':
+      return (
+        <>
+          <View style={{ position: 'absolute', left: size / 2 - 1, top: q, width: 2, height: size / 2, backgroundColor: color }} />
+          <View style={{ position: 'absolute', left: q, top: size / 2 - 1, width: size / 2, height: 2, backgroundColor: color }} />
+        </>
+      );
     default:
       return null;
   }

@@ -10,17 +10,15 @@ interface MiniMapProps {
   playerTileY: number;
 }
 
-// Small minimap constants
+// Small minimap constants (320x400 map → sample every 4 → 80x100 → scale 0.5)
 const MINI_SCALE = 0.5;
-const MINI_W = 80;
-const MINI_H = 100;
-const SAMPLE = 2;
+const SAMPLE = 4;
 
-// Full map constants — fit the map into available screen space
-const FULL_MARGIN = 40;
+// Full map constants
+const FULL_MARGIN = 20;
 const FULL_W = SCREEN_WIDTH - FULL_MARGIN * 2;
-const FULL_H = SCREEN_HEIGHT - FULL_MARGIN * 2 - 40; // 40 for header
-const FULL_SAMPLE = 2;
+const FULL_H = SCREEN_HEIGHT - FULL_MARGIN * 2 - 40;
+const FULL_SAMPLE = 4;
 
 const MiniMap: React.FC<MiniMapProps> = ({ map, playerTileX, playerTileY }) => {
   const [expanded, setExpanded] = useState(false);
@@ -152,8 +150,8 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   mapArea: {
-    width: MINI_W * MINI_SCALE,
-    height: MINI_H * MINI_SCALE,
+    width: 80 * MINI_SCALE, // 320/SAMPLE * MINI_SCALE
+    height: 100 * MINI_SCALE, // 400/SAMPLE * MINI_SCALE
   },
   playerDot: {
     position: 'absolute',

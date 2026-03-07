@@ -1,8 +1,11 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, StatusBar, Text, TouchableOpacity } from 'react-native';
-import { generateIndiaMap, WORLD_NPCS, PLAYER_START, getStateName, getNearestSettlement } from '../data/india-map';
+import { generateIndiaMap, WORLD_NPCS, PLAYER_START, getStateName, getNearestSettlement, getBiomeAt } from '../data/india-map';
 import { useGameLoop } from '../engine/useGameLoop';
 import { useInventory } from '../engine/useInventory';
+import { useBattle } from '../engine/useBattle';
+import { useNPCAI } from '../engine/useNPCAI';
+import { useSound } from '../engine/useSound';
 import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE } from '../engine/constants';
 import TileRenderer from './TileRenderer';
 import EntityRenderer from './EntityRenderer';
@@ -11,28 +14,89 @@ import ActionButton from './ActionButton';
 import DialogBox from './DialogBox';
 import MiniMap from './MiniMap';
 import InventoryScreen from './InventoryScreen';
+import BattleScreen from './BattleScreen';
 
 const GameScreen: React.FC = () => {
   const worldMap = useMemo(() => generateIndiaMap(), []);
   const [showInventory, setShowInventory] = useState(false);
 
-  const { gameState, setDirection, interact } = useGameLoop(
+  const { gameState, setDirection, interact, setPaused, clearEncounter } = useGameLoop(
     worldMap,
     WORLD_NPCS,
     PLAYER_START,
   );
 
-  const { inventory, equipItem, unequipItem, removeItem } = useInventory();
+  const { inventory, addItem, equipItem, unequipItem, removeItem, getEquippedStats } = useInventory();
+  const { battle, startBattle, doPlayerAction, closeBattle } = useBattle(getEquippedStats, inventory, removeItem);
+  const { tickNPCs, getNPCPositions, facePlayer } = useNPCAI(WORLD_NPCS, worldMap);
+  const { playSFX } = useSound();
+
+  // NPC AI tick
+  const npcTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    npcTickRef.current = setInterval(() => {
+      tickNPCs(gameState.playerPos.x, gameState.playerPos.y, gameState.dialog.active || battle.active);
+    }, 33);
+    return () => { if (npcTickRef.current) clearInterval(npcTickRef.current); };
+  }, [tickNPCs, gameState.dialog.active, battle.active]);
+
+  // Pause game loop during battle
+  useEffect(() => {
+    setPaused(battle.active);
+  }, [battle.active, setPaused]);
+
+  // Handle random encounter trigger
+  useEffect(() => {
+    if (gameState.encounter && !battle.active) {
+      const tileX = Math.floor(gameState.playerPos.x / SCALED_TILE);
+      const tileY = Math.floor(gameState.playerPos.y / SCALED_TILE);
+      const biome = getBiomeAt(tileX, tileY);
+      playSFX('battle_start');
+      startBattle(biome);
+      clearEncounter();
+    }
+  }, [gameState.encounter, battle.active, gameState.playerPos, startBattle, clearEncounter, playSFX]);
 
   const playerTileX = Math.floor(gameState.playerPos.x / SCALED_TILE);
   const playerTileY = Math.floor(gameState.playerPos.y / SCALED_TILE);
   const stateName = getStateName(playerTileX, playerTileY);
   const settlement = getNearestSettlement(playerTileX, playerTileY);
 
+  const npcRenderData = useMemo(() => {
+    const positions = getNPCPositions();
+    return positions.map(p => {
+      const npc = WORLD_NPCS.find(n => n.id === p.id);
+      return { ...p, name: npc?.name || '' };
+    });
+  }, [getNPCPositions]);
+
   const handleUseItem = useCallback((itemId: string) => {
-    // For now just consume the item — effect system can be added later
     removeItem(itemId, 1);
-  }, [removeItem]);
+    playSFX('item_use');
+  }, [removeItem, playSFX]);
+
+  const handleBattleAction = useCallback((action: Parameters<typeof doPlayerAction>[0], itemId?: string) => {
+    if (action === 'attack') playSFX('attack_hit');
+    else if (action === 'defend') playSFX('defend');
+    else if (action === 'run') playSFX('run_away');
+    doPlayerAction(action, itemId);
+  }, [doPlayerAction, playSFX]);
+
+  const handleBattleClose = useCallback(() => {
+    if (battle.result === 'win') {
+      playSFX('victory');
+      // Chance to find loot
+      if (Math.random() < 0.3) {
+        addItem('healing_herb', 1);
+      }
+    }
+    closeBattle();
+  }, [closeBattle, battle.result, playSFX, addItem]);
+
+  const handleInteract = useCallback(() => {
+    playSFX('npc_talk');
+    interact();
+  }, [interact, playSFX]);
 
   return (
     <View style={styles.container}>
@@ -45,7 +109,7 @@ const GameScreen: React.FC = () => {
           cameraY={gameState.cameraY}
         />
         <EntityRenderer
-          npcs={WORLD_NPCS}
+          npcData={npcRenderData}
           playerPos={gameState.playerPos}
           playerDir={gameState.playerDir}
           playerMoving={gameState.playerMoving}
@@ -58,16 +122,20 @@ const GameScreen: React.FC = () => {
           playerTileX={playerTileX}
           playerTileY={playerTileY}
         />
-        <DialogBox dialog={gameState.dialog} onAdvance={interact} />
+        <DialogBox dialog={gameState.dialog} onAdvance={handleInteract} />
       </View>
 
       <View style={styles.controlsArea}>
         <View style={styles.infoBar}>
-          <View>
+          <View style={styles.infoLeft}>
             <Text style={styles.infoText}>{settlement || stateName}</Text>
             {settlement && <Text style={styles.stateText}>{stateName}</Text>}
           </View>
-          <Text style={styles.coordText}>({playerTileX}, {playerTileY})</Text>
+          <View style={styles.infoRight}>
+            <Text style={styles.levelText}>Lv.{battle.playerLevel}</Text>
+            <Text style={styles.goldText}>{battle.playerGold}G</Text>
+            <Text style={styles.coordText}>({playerTileX},{playerTileY})</Text>
+          </View>
         </View>
 
         <View style={styles.controlsRow}>
@@ -77,13 +145,13 @@ const GameScreen: React.FC = () => {
           <View style={styles.buttonsContainer}>
             <View style={styles.buttonRow}>
               <View style={styles.buttonWithLabel}>
-                <ActionButton onPress={interact} label="A" />
+                <ActionButton onPress={handleInteract} label="A" />
                 <Text style={styles.buttonLabelText}>TALK</Text>
               </View>
               <View style={styles.buttonWithLabel}>
                 <TouchableOpacity
                   style={styles.bagButton}
-                  onPress={() => setShowInventory(true)}
+                  onPress={() => { playSFX('menu_select'); setShowInventory(true); }}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.bagButtonText}>B</Text>
@@ -98,10 +166,19 @@ const GameScreen: React.FC = () => {
       {showInventory && (
         <InventoryScreen
           inventory={inventory}
-          onClose={() => setShowInventory(false)}
-          onEquip={equipItem}
-          onUnequip={unequipItem}
+          onClose={() => { playSFX('menu_back'); setShowInventory(false); }}
+          onEquip={(id) => { playSFX('equip'); equipItem(id); }}
+          onUnequip={(slot) => { playSFX('equip'); unequipItem(slot); }}
           onUse={handleUseItem}
+        />
+      )}
+
+      {battle.active && (
+        <BattleScreen
+          battle={battle}
+          inventory={inventory}
+          onAction={handleBattleAction}
+          onClose={handleBattleClose}
         />
       )}
     </View>
@@ -129,10 +206,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 4,
     borderBottomWidth: 1,
     borderBottomColor: PALETTE.uiDark,
+  },
+  infoLeft: {
+    flex: 1,
+  },
+  infoRight: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
   },
   infoText: {
     color: PALETTE.yellow,
@@ -148,9 +233,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'monospace',
   },
-  coordText: {
-    color: PALETTE.lightGray,
+  levelText: {
+    color: PALETTE.green,
     fontSize: 11,
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+  },
+  goldText: {
+    color: PALETTE.yellow,
+    fontSize: 11,
+    fontFamily: 'monospace',
+  },
+  coordText: {
+    color: PALETTE.midGray,
+    fontSize: 10,
     fontFamily: 'monospace',
   },
   controlsRow: {

@@ -1,15 +1,16 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { Direction, Position, NPC, SOLID_TILES, TileMapData, DialogState } from '../types';
-import { SCALED_TILE, MOVE_SPEED, TICK_MS, INTERACT_RANGE, SCALE } from './constants';
+import { Direction, Position, NPC, SOLID_TILES, ENCOUNTER_TILES, TileMapData, DialogState } from '../types';
+import { SCALED_TILE, MOVE_SPEED, TICK_MS, INTERACT_RANGE, SCALE, ENCOUNTER_RATE } from './constants';
 
 interface GameState {
-  playerPos: Position;       // pixel position
+  playerPos: Position;
   playerDir: Direction;
   playerMoving: boolean;
   animFrame: number;
   cameraX: number;
   cameraY: number;
   dialog: DialogState;
+  encounter: boolean;
 }
 
 export function useGameLoop(
@@ -20,6 +21,8 @@ export function useGameLoop(
   const moveDir = useRef<Direction | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const frameCount = useRef(0);
+  const stepCount = useRef(0);
+  const lastEncounterStep = useRef(0);
 
   const [gameState, setGameState] = useState<GameState>(() => ({
     playerPos: { x: startPos.x * SCALED_TILE, y: startPos.y * SCALED_TILE },
@@ -29,13 +32,16 @@ export function useGameLoop(
     cameraX: startPos.x * SCALED_TILE,
     cameraY: startPos.y * SCALED_TILE,
     dialog: { active: false, npcName: '', lines: [], currentLine: 0 },
+    encounter: false,
   }));
 
   const stateRef = useRef(gameState);
   stateRef.current = gameState;
 
+  const pausedRef = useRef(false);
+  const setPaused = useCallback((p: boolean) => { pausedRef.current = p; }, []);
+
   const canMoveTo = useCallback((px: number, py: number): boolean => {
-    // Check all four corners of the player bounding box (slightly inset)
     const inset = SCALED_TILE * 0.2;
     const corners = [
       { x: px + inset, y: py + inset },
@@ -46,32 +52,15 @@ export function useGameLoop(
     for (const corner of corners) {
       const tileX = Math.floor(corner.x / SCALED_TILE);
       const tileY = Math.floor(corner.y / SCALED_TILE);
-      // Out of bounds
-      if (tileX < 0 || tileX >= map.width || tileY < 0 || tileY >= map.height) {
-        return false;
-      }
-      const tile = map.ground[tileY][tileX];
-      if (SOLID_TILES.has(tile)) return false;
+      if (tileX < 0 || tileX >= map.width || tileY < 0 || tileY >= map.height) return false;
+      if (SOLID_TILES.has(map.ground[tileY][tileX])) return false;
     }
-
-    // Check NPC collision
-    for (const npc of npcs) {
-      const npcPx = npc.position.x * SCALED_TILE;
-      const npcPy = npc.position.y * SCALED_TILE;
-      const overlap =
-        px + SCALED_TILE * 0.8 > npcPx + SCALED_TILE * 0.2 &&
-        px + SCALED_TILE * 0.2 < npcPx + SCALED_TILE * 0.8 &&
-        py + SCALED_TILE * 0.8 > npcPy + SCALED_TILE * 0.2 &&
-        py + SCALED_TILE * 0.2 < npcPy + SCALED_TILE * 0.8;
-      if (overlap) return false;
-    }
-
     return true;
-  }, [map, npcs]);
+  }, [map]);
 
   const tick = useCallback(() => {
     const state = stateRef.current;
-    if (state.dialog.active) return; // freeze movement during dialog
+    if (state.dialog.active || state.encounter || pausedRef.current) return;
 
     const dir = moveDir.current;
     if (!dir) {
@@ -93,16 +82,33 @@ export function useGameLoop(
       case 'right': nx += speed; break;
     }
 
-    // Try full movement first, then axis-only fallback
-    if (canMoveTo(nx, ny)) {
-      x = nx; y = ny;
-    } else if (nx !== x && canMoveTo(nx, y)) {
-      x = nx;
-    } else if (ny !== y && canMoveTo(x, ny)) {
-      y = ny;
+    let moved = false;
+    if (canMoveTo(nx, ny)) { x = nx; y = ny; moved = true; }
+    else if (nx !== x && canMoveTo(nx, y)) { x = nx; moved = true; }
+    else if (ny !== y && canMoveTo(x, ny)) { y = ny; moved = true; }
+
+    // Random encounter check
+    if (moved) {
+      stepCount.current++;
+      const tileX = Math.floor((x + SCALED_TILE / 2) / SCALED_TILE);
+      const tileY = Math.floor((y + SCALED_TILE / 2) / SCALED_TILE);
+      const tile = map.ground[tileY]?.[tileX];
+
+      if (tile !== undefined && ENCOUNTER_TILES.has(tile) &&
+          stepCount.current - lastEncounterStep.current > 15) {
+        if (Math.random() < ENCOUNTER_RATE) {
+          lastEncounterStep.current = stepCount.current;
+          setGameState(prev => ({
+            ...prev,
+            playerPos: { x, y },
+            playerMoving: false,
+            encounter: true,
+          }));
+          return;
+        }
+      }
     }
 
-    // Smooth camera follow
     const camLerp = 0.12;
     const camX = state.cameraX + (x - state.cameraX) * camLerp;
     const camY = state.cameraY + (y - state.cameraY) * camLerp;
@@ -112,27 +118,28 @@ export function useGameLoop(
       playerPos: { x, y },
       playerDir: dir,
       playerMoving: true,
-      animFrame: Math.floor(frameCount.current / 8) % 2,
+      animFrame: Math.floor(frameCount.current / 6) % 4,
       cameraX: camX,
       cameraY: camY,
     }));
-  }, [canMoveTo]);
+  }, [canMoveTo, map]);
 
   useEffect(() => {
     tickRef.current = setInterval(tick, TICK_MS);
-    return () => {
-      if (tickRef.current) clearInterval(tickRef.current);
-    };
+    return () => { if (tickRef.current) clearInterval(tickRef.current); };
   }, [tick]);
 
   const setDirection = useCallback((dir: Direction | null) => {
     moveDir.current = dir;
   }, []);
 
+  const clearEncounter = useCallback(() => {
+    setGameState(prev => ({ ...prev, encounter: false }));
+  }, []);
+
   const interact = useCallback(() => {
     const state = stateRef.current;
 
-    // If dialog is active, advance it
     if (state.dialog.active) {
       if (state.dialog.currentLine < state.dialog.lines.length - 1) {
         setGameState(prev => ({
@@ -140,7 +147,6 @@ export function useGameLoop(
           dialog: { ...prev.dialog, currentLine: prev.dialog.currentLine + 1 },
         }));
       } else {
-        // Close dialog
         setGameState(prev => ({
           ...prev,
           dialog: { active: false, npcName: '', lines: [], currentLine: 0 },
@@ -149,33 +155,21 @@ export function useGameLoop(
       return;
     }
 
-    // Check for nearby NPCs
     const playerTileX = state.playerPos.x / SCALED_TILE;
     const playerTileY = state.playerPos.y / SCALED_TILE;
 
     for (const npc of npcs) {
       const dx = npc.position.x - playerTileX;
       const dy = npc.position.y - playerTileY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < INTERACT_RANGE) {
+      if (Math.sqrt(dx * dx + dy * dy) < INTERACT_RANGE) {
         setGameState(prev => ({
           ...prev,
-          dialog: {
-            active: true,
-            npcName: npc.name,
-            lines: npc.dialog,
-            currentLine: 0,
-          },
+          dialog: { active: true, npcName: npc.name, lines: npc.dialog, currentLine: 0 },
         }));
         return;
       }
     }
   }, [npcs]);
 
-  return {
-    gameState,
-    setDirection,
-    interact,
-  };
+  return { gameState, setDirection, interact, setPaused, clearEncounter };
 }

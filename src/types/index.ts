@@ -34,18 +34,50 @@ export enum TileType {
   PALACE = 21,
   WELL = 22,
   GARDEN = 23,
+  // New terrain variety
+  DEEP_OCEAN = 24,
+  SHALLOW_WATER = 25,
+  ICE = 26,
+  TALL_GRASS = 27,
+  SAND_DUNES = 28,
+  TREE_PINE = 29,
+  TREE_PALM = 30,
+  TREE_BANYAN = 31,
+  CLIFF = 32,
+  ROCKS = 33,
+  FLOWERS = 34,
+  RUINS = 35,
+  BRIDGE = 36,
+  CAMPSITE = 37,
+  HUT = 38,
+  LAKE = 39,
 }
 
 export const SOLID_TILES = new Set([
   TileType.OCEAN,
+  TileType.DEEP_OCEAN,
   TileType.MOUNTAIN,
   TileType.SNOW,
+  TileType.ICE,
   TileType.WALL_MUD,
   TileType.WALL_STONE,
   TileType.ROOF,
   TileType.FORT_WALL,
   TileType.PALACE,
   TileType.WELL,
+  TileType.CLIFF,
+  TileType.ROCKS,
+  TileType.RUINS,
+  TileType.HUT,
+  TileType.LAKE,
+]);
+
+// Tiles that can trigger random encounters
+export const ENCOUNTER_TILES = new Set([
+  TileType.TALL_GRASS,
+  TileType.DENSE_JUNGLE,
+  TileType.SWAMP,
+  TileType.SAND_DUNES,
 ]);
 
 export type BiomeType =
@@ -72,6 +104,8 @@ export interface TileMapData {
   ground: TileType[][];
 }
 
+export type NPCBehavior = 'stationary' | 'wander' | 'patrol' | 'guard';
+
 export interface NPC {
   id: string;
   name: string;
@@ -79,6 +113,9 @@ export interface NPC {
   direction: Direction;
   dialog: string[];
   settlement: string;
+  behavior: NPCBehavior;
+  wanderRadius?: number;
+  patrolPath?: Position[];
 }
 
 export interface DialogState {
@@ -119,4 +156,40 @@ export interface EquipState {
   body: string | null;
   legs: string | null;
   accessory: string | null;
+}
+
+// Battle system
+export interface EnemyDef {
+  id: string;
+  name: string;
+  hp: number;
+  attack: number;
+  defense: number;
+  speed: number;
+  xpReward: number;
+  goldReward: number;
+  biomes: BiomeType[];
+  bodyColor: string;
+  headColor: string;
+  description: string;
+}
+
+export type BattleAction = 'attack' | 'defend' | 'item' | 'run';
+
+export interface BattleState {
+  active: boolean;
+  enemy: EnemyDef | null;
+  enemyHP: number;
+  playerHP: number;
+  playerMaxHP: number;
+  playerATK: number;
+  playerDEF: number;
+  turn: 'player' | 'enemy' | 'result';
+  phase: 'intro' | 'select' | 'animate' | 'enemy_turn' | 'result';
+  message: string;
+  result: 'none' | 'win' | 'lose' | 'run';
+  isDefending: boolean;
+  playerXP: number;
+  playerLevel: number;
+  playerGold: number;
 }
