@@ -2,7 +2,9 @@ import { ItemDef } from '../types';
 
 // All items in the game, organized by category
 export const ITEMS: Record<string, ItemDef> = {
-  // === WEAPONS ===
+  // ═══════════════════════════════════════════════
+  // === WEAPONS — Basic Tier ===
+  // ═══════════════════════════════════════════════
   wooden_sword: {
     id: 'wooden_sword',
     name: 'Wooden Sword',
@@ -13,31 +15,11 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'weapon',
     attack: 5,
+    weight: 1,
+    crit: 2,
     value: 20,
-  },
-  iron_talwar: {
-    id: 'iron_talwar',
-    name: 'Iron Talwar',
-    category: 'weapons',
-    description: 'A curved Indian sword favored by soldiers.',
-    icon: 'IT',
-    stackable: false,
-    usable: false,
-    equipSlot: 'weapon',
-    attack: 12,
-    value: 80,
-  },
-  steel_khanda: {
-    id: 'steel_khanda',
-    name: 'Steel Khanda',
-    category: 'weapons',
-    description: 'A double-edged straight sword of fine Rajput steel.',
-    icon: 'SK',
-    stackable: false,
-    usable: false,
-    equipSlot: 'weapon',
-    attack: 20,
-    value: 200,
+    rarity: 'common',
+    material: 'wood',
   },
   bamboo_staff: {
     id: 'bamboo_staff',
@@ -49,19 +31,11 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'weapon',
     attack: 8,
+    weight: 1,
+    crit: 3,
     value: 30,
-  },
-  hunters_bow: {
-    id: 'hunters_bow',
-    name: "Hunter's Bow",
-    category: 'weapons',
-    description: 'A recurve bow used by forest hunters.',
-    icon: 'HB',
-    stackable: false,
-    usable: false,
-    equipSlot: 'weapon',
-    attack: 15,
-    value: 120,
+    rarity: 'common',
+    material: 'wood',
   },
   mughal_dagger: {
     id: 'mughal_dagger',
@@ -73,10 +47,215 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'weapon',
     attack: 10,
+    weight: 1,
+    speed: 2,
+    crit: 8,
     value: 100,
+    rarity: 'uncommon',
+    material: 'iron',
+    history: 'Mughal court daggers were both weapon and status symbol.',
   },
 
-  // === ARMOR ===
+  // === WEAPONS — Iron Tier ===
+  iron_talwar: {
+    id: 'iron_talwar',
+    name: 'Iron Talwar',
+    category: 'weapons',
+    description: 'A curved Indian sword favored by soldiers.',
+    icon: 'IT',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 12,
+    weight: 3,
+    crit: 5,
+    value: 80,
+    rarity: 'common',
+    material: 'iron',
+    history: 'The talwar was the quintessential sidearm of Mughal cavalry.',
+  },
+  hunters_bow: {
+    id: 'hunters_bow',
+    name: "Hunter's Bow",
+    category: 'weapons',
+    description: 'A recurve bow used by forest hunters.',
+    icon: 'HB',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 15,
+    weight: 2,
+    crit: 6,
+    value: 120,
+    rarity: 'uncommon',
+    material: 'wood',
+  },
+  katara: {
+    id: 'katara',
+    name: 'Katara',
+    category: 'weapons',
+    description: 'A push-dagger with H-shaped grip, unique to India. Designed for thrusting.',
+    icon: 'KT',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 14,
+    weight: 2,
+    speed: 1,
+    crit: 12,
+    value: 150,
+    rarity: 'uncommon',
+    material: 'iron',
+    history: 'The katara was favored by Rajput warriors for its lethal close-range thrusts.',
+  },
+
+  // === WEAPONS — Steel Tier ===
+  steel_khanda: {
+    id: 'steel_khanda',
+    name: 'Steel Khanda',
+    category: 'weapons',
+    description: 'A double-edged straight sword of fine Rajput steel.',
+    icon: 'SK',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 20,
+    weight: 4,
+    crit: 5,
+    value: 200,
+    rarity: 'uncommon',
+    material: 'steel',
+    history: 'The khanda symbolized martial dharma, wielded by Rajput kings and Sikh warriors alike.',
+  },
+  pata: {
+    id: 'pata',
+    name: 'Pata',
+    category: 'weapons',
+    description: 'A gauntlet-sword that encases the forearm. Heavy but devastating.',
+    icon: 'PA',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 24,
+    weight: 5,
+    defense: 3,
+    crit: 4,
+    value: 280,
+    rarity: 'rare',
+    material: 'steel',
+    history: 'The pata was a Maratha innovation — half-sword, half-shield.',
+  },
+  composite_kaman: {
+    id: 'composite_kaman',
+    name: 'Composite Kaman',
+    category: 'weapons',
+    description: 'A powerful composite bow of horn, wood, and sinew. Used by Mughal mounted archers.',
+    icon: 'CK',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 22,
+    weight: 3,
+    crit: 8,
+    value: 300,
+    rarity: 'rare',
+    material: 'wood',
+    history: 'Central Asian composite bows gave the Mughal armies devastating ranged superiority.',
+  },
+  gupti: {
+    id: 'gupti',
+    name: 'Gupti',
+    category: 'weapons',
+    description: 'A concealed sword-cane. Light and deceptive, favored by spies.',
+    icon: 'GP',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 11,
+    weight: 1,
+    speed: 3,
+    crit: 15,
+    value: 180,
+    rarity: 'uncommon',
+    material: 'steel',
+    history: 'Disguised as a walking stick, the gupti was the weapon of assassins and courtiers.',
+  },
+  ban: {
+    id: 'ban',
+    name: 'Ban',
+    category: 'weapons',
+    description: 'A curved throwing knife. Can be hurled with lethal spin.',
+    icon: 'BN',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 9,
+    weight: 1,
+    speed: 2,
+    crit: 10,
+    value: 60,
+    rarity: 'common',
+    material: 'iron',
+    history: 'Used by tribal warriors and mountain guerrillas across the subcontinent.',
+  },
+
+  // === WEAPONS — Wootz Tier (Rare/Legendary) ===
+  wootz_talwar: {
+    id: 'wootz_talwar',
+    name: 'Wootz Talwar',
+    category: 'weapons',
+    description: 'A talwar forged from legendary wootz steel. Its watered pattern mesmerizes.',
+    icon: 'WT',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 28,
+    weight: 3,
+    crit: 10,
+    value: 500,
+    rarity: 'rare',
+    material: 'wootz',
+    history: 'Wootz crucible steel, born in South India, was the finest sword-steel in the world.',
+  },
+  zulfikar: {
+    id: 'zulfikar',
+    name: 'Zulfikar',
+    category: 'weapons',
+    description: 'A legendary split-pointed sword. Its dual tips tear through armor.',
+    icon: 'ZF',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 35,
+    weight: 5,
+    crit: 12,
+    value: 800,
+    rarity: 'legendary',
+    material: 'wootz',
+    history: 'Named after the mythical sword of Ali, the Zulfikar is the rarest of blades.',
+  },
+  toradar: {
+    id: 'toradar',
+    name: 'Toradar Matchlock',
+    category: 'weapons',
+    description: 'A Mughal matchlock musket. Slow to reload but devastatingly powerful.',
+    icon: 'TM',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 30,
+    weight: 6,
+    speed: -3,
+    crit: 15,
+    value: 600,
+    rarity: 'rare',
+    material: 'iron',
+    history: 'Toradars gave the Mughal army its edge in pitched battles against cavalry charges.',
+  },
+
+  // ═══════════════════════════════════════════════
+  // === ARMOR — Body ===
+  // ═══════════════════════════════════════════════
   cotton_kurta: {
     id: 'cotton_kurta',
     name: 'Cotton Kurta',
@@ -87,7 +266,9 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'body',
     defense: 3,
+    weight: 0,
     value: 15,
+    rarity: 'common',
   },
   leather_vest: {
     id: 'leather_vest',
@@ -99,7 +280,9 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'body',
     defense: 8,
+    weight: 2,
     value: 60,
+    rarity: 'common',
   },
   chain_mail: {
     id: 'chain_mail',
@@ -111,7 +294,75 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'body',
     defense: 15,
+    weight: 4,
     value: 180,
+    rarity: 'uncommon',
+    material: 'iron',
+    history: 'Mughal chain mail was often layered under padded cotton for maximum protection.',
+  },
+  zirih: {
+    id: 'zirih',
+    name: 'Zirih Baktar',
+    category: 'armor',
+    description: 'A coat of interlinked mail and plate. The backbone of Mughal heavy infantry.',
+    icon: 'ZB',
+    stackable: false,
+    usable: false,
+    equipSlot: 'body',
+    defense: 22,
+    weight: 6,
+    value: 350,
+    rarity: 'rare',
+    material: 'steel',
+    history: 'The zirih baktar combined flexibility of mail with the strength of lamellar plates.',
+  },
+  chahar_ainah: {
+    id: 'chahar_ainah',
+    name: 'Chahar Ainah',
+    category: 'armor',
+    description: 'Four Mirror armor — four polished steel plates worn over chain mail.',
+    icon: 'CA',
+    stackable: false,
+    usable: false,
+    equipSlot: 'body',
+    defense: 28,
+    weight: 7,
+    value: 500,
+    rarity: 'rare',
+    material: 'steel',
+    history: 'The four mirror plates deflected sword blows with their curved surfaces.',
+  },
+  baktar: {
+    id: 'baktar',
+    name: 'Baktar',
+    category: 'armor',
+    description: 'Full body lamellar armor of overlapping steel scales. Supreme protection.',
+    icon: 'BK',
+    stackable: false,
+    usable: false,
+    equipSlot: 'body',
+    defense: 35,
+    weight: 9,
+    value: 800,
+    rarity: 'legendary',
+    material: 'steel',
+    history: 'Only the highest-ranking mansabdars could afford a full baktar of Indian steel.',
+  },
+
+  // === ARMOR — Head ===
+  mughal_turban: {
+    id: 'mughal_turban',
+    name: 'Padded Turban',
+    category: 'armor',
+    description: 'A thick silk turban with hidden metal plates.',
+    icon: 'PT',
+    stackable: false,
+    usable: false,
+    equipSlot: 'head',
+    defense: 4,
+    weight: 1,
+    value: 40,
+    rarity: 'common',
   },
   iron_helmet: {
     id: 'iron_helmet',
@@ -123,20 +374,45 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'head',
     defense: 5,
+    weight: 2,
     value: 50,
+    rarity: 'common',
+    material: 'iron',
   },
-  mughal_turban: {
-    id: 'mughal_turban',
-    name: 'Padded Turban',
+  khud: {
+    id: 'khud',
+    name: 'Khud',
     category: 'armor',
-    description: 'A thick silk turban with hidden metal plates.',
-    icon: 'PT',
+    description: 'A Mughal war helmet with nasal guard and mail aventail protecting the neck.',
+    icon: 'KH',
     stackable: false,
     usable: false,
     equipSlot: 'head',
-    defense: 4,
-    value: 40,
+    defense: 10,
+    weight: 3,
+    value: 200,
+    rarity: 'uncommon',
+    material: 'steel',
+    history: 'The khud was the standard helmet of Mughal cavalry, often topped with a plume.',
   },
+  top_khud: {
+    id: 'top_khud',
+    name: 'Top Khud',
+    category: 'armor',
+    description: 'A conical war helmet of wootz steel with gold-inlaid calligraphy.',
+    icon: 'TK',
+    stackable: false,
+    usable: false,
+    equipSlot: 'head',
+    defense: 16,
+    weight: 4,
+    value: 450,
+    rarity: 'rare',
+    material: 'wootz',
+    history: 'Reserved for commanders, the top khud bore verses from scripture.',
+  },
+
+  // === ARMOR — Legs ===
   leather_sandals: {
     id: 'leather_sandals',
     name: 'Leather Sandals',
@@ -147,7 +423,10 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'legs',
     defense: 2,
+    weight: 0,
+    speed: 1,
     value: 20,
+    rarity: 'common',
   },
   iron_greaves: {
     id: 'iron_greaves',
@@ -159,8 +438,29 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'legs',
     defense: 6,
+    weight: 2,
     value: 70,
+    rarity: 'common',
+    material: 'iron',
   },
+  steel_jangha: {
+    id: 'steel_jangha',
+    name: 'Steel Jangha',
+    category: 'armor',
+    description: 'Articulated thigh and shin armor of riveted steel plates.',
+    icon: 'SJ',
+    stackable: false,
+    usable: false,
+    equipSlot: 'legs',
+    defense: 12,
+    weight: 4,
+    value: 220,
+    rarity: 'uncommon',
+    material: 'steel',
+    history: 'Full leg armor was worn by heavy cavalrymen in the Deccan wars.',
+  },
+
+  // === ARMOR — Accessory ===
   jade_amulet: {
     id: 'jade_amulet',
     name: 'Jade Amulet',
@@ -171,10 +471,63 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'accessory',
     defense: 3,
+    weight: 0,
     value: 90,
+    rarity: 'uncommon',
+  },
+  dhal_shield: {
+    id: 'dhal_shield',
+    name: 'Dhal',
+    category: 'armor',
+    description: 'A small round shield of steel with four bosses. The iconic Indian buckler.',
+    icon: 'DH',
+    stackable: false,
+    usable: false,
+    equipSlot: 'accessory',
+    defense: 8,
+    weight: 2,
+    value: 120,
+    rarity: 'uncommon',
+    material: 'steel',
+    history: 'Talwar-and-dhal was the classic fighting pair of Indian martial arts.',
+  },
+  bazuband: {
+    id: 'bazuband',
+    name: 'Bazuband',
+    category: 'armor',
+    description: 'Jeweled arm-guard with inscribed prayers. Grants divine protection.',
+    icon: 'BB',
+    stackable: false,
+    usable: false,
+    equipSlot: 'accessory',
+    defense: 5,
+    attack: 3,
+    weight: 1,
+    value: 200,
+    rarity: 'rare',
+    history: 'Mughal bazubands were believed to channel celestial blessings.',
+  },
+  tigers_claw: {
+    id: 'tigers_claw',
+    name: "Tiger's Claw",
+    category: 'armor',
+    description: 'A bagh nakh — concealed iron claws worn over the knuckles.',
+    icon: 'TC',
+    stackable: false,
+    usable: false,
+    equipSlot: 'accessory',
+    attack: 10,
+    crit: 20,
+    weight: 0,
+    value: 250,
+    rarity: 'rare',
+    material: 'iron',
+    history: 'Shivaji famously used a bagh nakh against Afzal Khan at the Battle of Pratapgarh.',
   },
 
+  // ═══════════════════════════════════════════════
   // === ITEMS (consumables & misc) ===
+  // ═══════════════════════════════════════════════
   healing_herb: {
     id: 'healing_herb',
     name: 'Healing Herb',
@@ -250,8 +603,32 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     value: 15,
   },
+  sharpening_stone: {
+    id: 'sharpening_stone',
+    name: 'Sharpening Stone',
+    category: 'items',
+    description: 'A whetstone for blades. Temporarily boosts attack in next battle.',
+    icon: 'SS',
+    stackable: true,
+    usable: true,
+    effect: 'boost_atk_temp',
+    value: 35,
+  },
+  sandalwood_balm: {
+    id: 'sandalwood_balm',
+    name: 'Sandalwood Balm',
+    category: 'items',
+    description: 'Soothing balm that cures poison and restores a little health.',
+    icon: 'SB',
+    stackable: true,
+    usable: true,
+    effect: 'cure_and_heal',
+    value: 40,
+  },
 
+  // ═══════════════════════════════════════════════
   // === KEY ITEMS ===
+  // ═══════════════════════════════════════════════
   emperors_letter: {
     id: 'emperors_letter',
     name: "Emperor's Letter",
@@ -363,6 +740,7 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     value: 0,
   },
+
   // === QUEST KEY ITEMS ===
   ancestral_talwar: {
     id: 'ancestral_talwar',
@@ -374,7 +752,12 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     equipSlot: 'weapon',
     attack: 18,
+    weight: 3,
+    crit: 8,
     value: 0,
+    rarity: 'rare',
+    material: 'wootz',
+    history: 'This blade was forged in an era before the Mughals came to Hindustan.',
   },
   mentors_ring: {
     id: 'mentors_ring',
@@ -418,6 +801,7 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: true,
     effect: 'boost_hp_permanent',
     value: 500,
+    rarity: 'legendary',
   },
   persian_scroll: {
     id: 'persian_scroll',
@@ -470,7 +854,10 @@ export const ITEMS: Record<string, ItemDef> = {
     equipSlot: 'accessory',
     attack: 8,
     defense: -3,
+    weight: 0,
+    crit: 10,
     value: 150,
+    rarity: 'rare',
   },
   spice_pouch: {
     id: 'spice_pouch',
@@ -500,3 +887,138 @@ export const STARTING_ITEMS: { itemId: string; quantity: number }[] = [
   { itemId: 'cotton_kurta', quantity: 1 },
   { itemId: 'healing_herb', quantity: 3 },
 ];
+
+// ═══════════════════════════════════════════════
+// === LOOT TABLES ===
+// ═══════════════════════════════════════════════
+
+export interface LootEntry {
+  itemId: string;
+  weight: number;    // relative probability
+  minLevel?: number; // only drops if player level >= this
+}
+
+export interface LootTable {
+  id: string;
+  drops: LootEntry[];
+  guaranteedGold: { min: number; max: number };
+  dropChance: number; // 0-1, chance of getting an item drop at all
+}
+
+// Loot tables referenced by enemy lootTableId
+export const LOOT_TABLES: Record<string, LootTable> = {
+  beast_common: {
+    id: 'beast_common',
+    drops: [
+      { itemId: 'healing_herb', weight: 50 },
+      { itemId: 'antidote_paste', weight: 20 },
+      { itemId: 'rope', weight: 10 },
+    ],
+    guaranteedGold: { min: 5, max: 15 },
+    dropChance: 0.4,
+  },
+  soldier_common: {
+    id: 'soldier_common',
+    drops: [
+      { itemId: 'healing_herb', weight: 30 },
+      { itemId: 'iron_talwar', weight: 5 },
+      { itemId: 'iron_helmet', weight: 5 },
+      { itemId: 'arrow_bundle', weight: 20 },
+      { itemId: 'ban', weight: 8 },
+    ],
+    guaranteedGold: { min: 10, max: 30 },
+    dropChance: 0.35,
+  },
+  mythic_rare: {
+    id: 'mythic_rare',
+    drops: [
+      { itemId: 'neem_potion', weight: 30 },
+      { itemId: 'tulsi_elixir', weight: 10 },
+      { itemId: 'jade_amulet', weight: 8 },
+      { itemId: 'camphor_incense', weight: 15 },
+      { itemId: 'bazuband', weight: 3 },
+    ],
+    guaranteedGold: { min: 20, max: 60 },
+    dropChance: 0.5,
+  },
+  automaton_metal: {
+    id: 'automaton_metal',
+    drops: [
+      { itemId: 'iron_greaves', weight: 10 },
+      { itemId: 'chain_mail', weight: 5 },
+      { itemId: 'sharpening_stone', weight: 20 },
+      { itemId: 'katara', weight: 4 },
+      { itemId: 'khud', weight: 3, minLevel: 5 },
+    ],
+    guaranteedGold: { min: 15, max: 45 },
+    dropChance: 0.45,
+  },
+  naga_serpent: {
+    id: 'naga_serpent',
+    drops: [
+      { itemId: 'antidote_paste', weight: 40 },
+      { itemId: 'sandalwood_balm', weight: 15 },
+      { itemId: 'neem_potion', weight: 20 },
+      { itemId: 'haunted_amulet', weight: 2, minLevel: 8 },
+    ],
+    guaranteedGold: { min: 12, max: 35 },
+    dropChance: 0.4,
+  },
+  elite_warrior: {
+    id: 'elite_warrior',
+    drops: [
+      { itemId: 'steel_khanda', weight: 5 },
+      { itemId: 'pata', weight: 3 },
+      { itemId: 'chahar_ainah', weight: 2, minLevel: 10 },
+      { itemId: 'wootz_talwar', weight: 1, minLevel: 12 },
+      { itemId: 'neem_potion', weight: 20 },
+      { itemId: 'sharpening_stone', weight: 15 },
+      { itemId: 'dhal_shield', weight: 4 },
+    ],
+    guaranteedGold: { min: 30, max: 80 },
+    dropChance: 0.55,
+  },
+  boss_legendary: {
+    id: 'boss_legendary',
+    drops: [
+      { itemId: 'tulsi_elixir', weight: 20 },
+      { itemId: 'wootz_talwar', weight: 5 },
+      { itemId: 'zulfikar', weight: 1, minLevel: 15 },
+      { itemId: 'baktar', weight: 1, minLevel: 15 },
+      { itemId: 'top_khud', weight: 2, minLevel: 12 },
+      { itemId: 'tigers_claw', weight: 3, minLevel: 10 },
+      { itemId: 'soma_elixir', weight: 1, minLevel: 15 },
+    ],
+    guaranteedGold: { min: 80, max: 200 },
+    dropChance: 0.75,
+  },
+};
+
+// Roll a loot table and return item drops
+export function rollLootTable(tableId: string, playerLevel: number): { itemId: string; gold: number } | { gold: number } {
+  const table = LOOT_TABLES[tableId];
+  if (!table) return { gold: 0 };
+
+  const gold = table.guaranteedGold.min +
+    Math.floor(Math.random() * (table.guaranteedGold.max - table.guaranteedGold.min + 1));
+
+  if (Math.random() > table.dropChance) {
+    return { gold };
+  }
+
+  // Filter drops by level
+  const eligible = table.drops.filter(d => !d.minLevel || playerLevel >= d.minLevel);
+  if (eligible.length === 0) return { gold };
+
+  // Weighted random selection
+  const totalWeight = eligible.reduce((sum, d) => sum + d.weight, 0);
+  let roll = Math.random() * totalWeight;
+  for (const drop of eligible) {
+    roll -= drop.weight;
+    if (roll <= 0) {
+      return { itemId: drop.itemId, gold };
+    }
+  }
+
+  return { gold };
+}

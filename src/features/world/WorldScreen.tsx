@@ -9,7 +9,7 @@ import { EncounterSystem, consumeEncounter, resetEncounterState } from '../../co
 import { NPCAISystem } from '../../core/systems/NPCAISystem';
 import { saveGame } from '../../core/persistence/SaveManager';
 import { generateIndiaMap, WORLD_NPCS, PLAYER_START, getStateName, getStateCode, getNearestSettlement, getBiomeAt } from '../../data/india-map';
-import { ITEMS } from '../../data/items';
+import { ITEMS, rollLootTable } from '../../data/items';
 import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE, DEV_MODE, setDevMode } from '../../engine/constants';
 import { useSound } from '../../engine/useSound';
 import TileRenderer from '../../components/TileRenderer';
@@ -168,8 +168,9 @@ const WorldScreen: React.FC = () => {
         const lvl = s2.playerLevel;
         const atk = 5 + equippedStats.attack + Math.floor(lvl * 1.5);
         const def = 2 + equippedStats.defense + Math.floor(lvl * 0.5);
+        const effectiveSpeed = Math.max(1, 10 + equippedStats.speed - equippedStats.weight);
         playSFX('battle_start');
-        s2.startBattle(biome, lvl, atk, def, s2.playerHP, s2.playerMaxHP, s2.playerXP, s2.playerGold, 10);
+        s2.startBattle(biome, lvl, atk, def, s2.playerHP, s2.playerMaxHP, s2.playerXP, s2.playerGold, effectiveSpeed, equippedStats.crit);
       }
 
       // Check quest triggers
@@ -468,14 +469,20 @@ const WorldScreen: React.FC = () => {
     const state = store.getState();
     const b = state.battle;
     if (b.result === 'win') {
-      // Award XP and gold
+      // Award XP and gold, roll loot table
       const enemy = b.enemy;
       if (enemy) {
         state.addXP(enemy.xpReward);
         state.addGold(enemy.goldReward);
-      }
-      if (Math.random() < 0.3) {
-        state.addItem('healing_herb', 1);
+        // Loot table drops
+        if (enemy.lootTableId) {
+          const loot = rollLootTable(enemy.lootTableId, state.playerLevel);
+          if (loot.gold > 0) state.addGold(loot.gold);
+          if ('itemId' in loot && loot.itemId) {
+            state.addItem(loot.itemId, 1);
+            state.addQuestLog(`Found: ${ITEMS[loot.itemId]?.name ?? loot.itemId}`);
+          }
+        }
       }
       playSFX('victory');
 

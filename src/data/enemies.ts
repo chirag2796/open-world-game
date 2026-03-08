@@ -11,6 +11,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#c09060', headColor: '#805030', description: 'A ruthless bandit of the Thar.',
     creatureType: 'soldier',
     moves: ['sword_slash', 'quick_strike', 'war_cry'],
+    lootTableId: 'soldier_common',
   },
   {
     id: 'sand_scorpion',
@@ -21,6 +22,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#a08040', headColor: '#806020', description: 'Venomous creature hiding in the dunes.',
     creatureType: 'beast',
     moves: ['claw_rake', 'venom_sting', 'fang_bite'],
+    lootTableId: 'beast_common',
   },
   {
     id: 'dust_djinn',
@@ -31,6 +33,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#d0a060', headColor: '#e0c080', description: 'A spirit of the sandstorm.',
     creatureType: 'mythic',
     moves: ['divine_light', 'mantra_blast', 'astral_strike', 'spirit_heal'],
+    lootTableId: 'mythic_rare',
   },
 
   // Plains enemies
@@ -43,6 +46,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#704030', headColor: '#503020', description: 'An aggressive boar charging through the fields.',
     creatureType: 'beast',
     moves: ['claw_rake', 'wild_charge', 'howl'],
+    lootTableId: 'beast_common',
   },
   {
     id: 'dacoit',
@@ -53,6 +57,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#604040', headColor: '#302020', description: 'A highway robber lurking on trade routes.',
     creatureType: 'soldier',
     moves: ['sword_slash', 'shield_bash', 'arrow_volley', 'war_cry'],
+    lootTableId: 'soldier_common',
   },
   {
     id: 'cobra',
@@ -63,6 +68,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#406020', headColor: '#304010', description: 'A deadly serpent with lightning strikes.',
     creatureType: 'naga',
     moves: ['serpent_strike', 'venom_spray', 'constrict'],
+    lootTableId: 'naga_serpent',
   },
 
   // Forest enemies
@@ -75,6 +81,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#606060', headColor: '#404040', description: 'A cunning predator of the woods.',
     creatureType: 'beast',
     moves: ['fang_bite', 'claw_rake', 'howl', 'wild_charge'],
+    lootTableId: 'beast_common',
   },
   {
     id: 'jungle_cat',
@@ -85,6 +92,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#c09040', headColor: '#a07030', description: 'Sleek and deadly, it strikes from the shadows.',
     creatureType: 'beast',
     moves: ['claw_rake', 'fang_bite', 'wild_charge'],
+    lootTableId: 'beast_common',
   },
   {
     id: 'tribal_warrior',
@@ -95,6 +103,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#805030', headColor: '#603820', description: 'A fierce warrior defending tribal lands.',
     creatureType: 'soldier',
     moves: ['sword_slash', 'shield_bash', 'war_cry', 'arrow_volley'],
+    lootTableId: 'soldier_common',
   },
 
   // Mountain enemies
@@ -107,6 +116,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#c0c0c0', headColor: '#909090', description: 'Ghost of the Himalayas.',
     creatureType: 'beast',
     moves: ['claw_rake', 'fang_bite', 'wild_charge', 'howl'],
+    lootTableId: 'beast_common',
   },
   {
     id: 'mountain_yak',
@@ -117,6 +127,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#503020', headColor: '#402010', description: 'A massive beast that charges when threatened.',
     creatureType: 'beast',
     moves: ['wild_charge', 'howl', 'claw_rake'],
+    lootTableId: 'beast_common',
   },
   {
     id: 'yeti',
@@ -127,6 +138,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#d0d0e0', headColor: '#b0b0c0', description: 'A legendary creature of the ice peaks.',
     creatureType: 'mythic',
     moves: ['iron_fist', 'boulder_throw', 'stone_wall', 'grind'],
+    lootTableId: 'mythic_rare',
   },
 
   // Coastal/wetland enemies
@@ -139,6 +151,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#506040', headColor: '#384028', description: 'A fearsome crocodile lurking in swamps.',
     creatureType: 'beast',
     moves: ['fang_bite', 'constrict', 'wild_charge'],
+    lootTableId: 'beast_common',
   },
   {
     id: 'pirate',
@@ -149,6 +162,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#404060', headColor: '#802020', description: 'A pirate from the Arabian Sea.',
     creatureType: 'soldier',
     moves: ['sword_slash', 'quick_strike', 'shield_bash', 'arrow_volley'],
+    lootTableId: 'soldier_common',
   },
 
   // Plateau enemies
@@ -161,6 +175,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#808080', headColor: '#606060', description: 'An ancient stone guardian of the Deccan.',
     creatureType: 'automaton',
     moves: ['iron_fist', 'stone_wall', 'boulder_throw', 'grind'],
+    lootTableId: 'automaton_metal',
   },
   {
     id: 'naga_spirit',
@@ -171,6 +186,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#4080a0', headColor: '#206080', description: 'A mystical serpent spirit from temple ruins.',
     creatureType: 'naga',
     moves: ['serpent_strike', 'mystic_coil', 'venom_spray', 'constrict'],
+    lootTableId: 'naga_serpent',
   },
   // === BOSS / STORY ENEMIES ===
   {
@@ -182,6 +198,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#704040', headColor: '#502020', description: 'The ruthless leader of the dig site bandits.',
     creatureType: 'soldier',
     moves: ['sword_slash', 'shield_bash', 'war_cry'],
+    lootTableId: 'elite_warrior',
   },
   {
     id: 'corrupted_asura',
@@ -192,6 +209,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#600040', headColor: '#400020', description: 'An ancient Asura bound by dark mantras within Agra Fort.',
     creatureType: 'mythic',
     moves: ['divine_light', 'mantra_blast', 'astral_strike', 'spirit_heal'],
+    lootTableId: 'boss_legendary',
   },
   {
     id: 'cosmic_asura',
@@ -202,6 +220,7 @@ export const ENEMIES: EnemyDef[] = [
     bodyColor: '#200040', headColor: '#100020', description: 'The manifestation of the Cosmic Imbalance itself.',
     creatureType: 'mythic',
     moves: ['astral_strike', 'divine_light', 'mantra_blast', 'spirit_heal'],
+    lootTableId: 'boss_legendary',
   },
 ];
 

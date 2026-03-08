@@ -24,18 +24,22 @@ export function calculateDamage(
   defenderType: CreatureType,
   atkBoost: number,   // stage modifier -6 to +6
   defBoost: number,
-): { damage: number; effectiveness: number; missed: boolean } {
+  critChance: number = 0, // bonus crit chance from equipment (0-100)
+): { damage: number; effectiveness: number; missed: boolean; crit: boolean } {
   // Accuracy check
   if (Math.random() * 100 > move.accuracy) {
-    return { damage: 0, effectiveness: 1, missed: true };
+    return { damage: 0, effectiveness: 1, missed: true, crit: false };
   }
 
   // Status moves do no damage
   if (move.power === 0) {
-    return { damage: 0, effectiveness: 1, missed: false };
+    return { damage: 0, effectiveness: 1, missed: false, crit: false };
   }
 
   const effectiveness = getEffectiveness(move.type, defenderType);
+
+  // Critical hit: base 6.25% + equipment bonus
+  const isCrit = Math.random() * 100 < (6.25 + critChance);
 
   // Apply stat stage modifiers (each stage is +/- 25%)
   const atkMult = Math.max(0.25, 1 + atkBoost * 0.25);
@@ -48,14 +52,15 @@ export function calculateDamage(
   const baseDamage = (move.power * effectiveAtk * attackerLevel * (attackerLevel + 100))
     / (10500 * effectiveDef);
 
-  // Apply effectiveness
-  const rawDamage = baseDamage * effectiveness;
+  // Apply effectiveness and crit multiplier (1.5x)
+  const critMult = isCrit ? 1.5 : 1;
+  const rawDamage = baseDamage * effectiveness * critMult;
 
   // Random variance (85%-100%)
   const variance = 0.85 + Math.random() * 0.15;
   const finalDamage = Math.max(1, Math.floor(rawDamage * variance));
 
-  return { damage: finalDamage, effectiveness, missed: false };
+  return { damage: finalDamage, effectiveness, missed: false, crit: isCrit };
 }
 
 // Determine turn order based on speed and move priority

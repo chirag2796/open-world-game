@@ -10,7 +10,7 @@ export interface InventorySlice {
   removeItem: (itemId: string, quantity?: number) => void;
   equipItem: (itemId: string) => void;
   unequipItem: (slot: EquipSlot) => void;
-  getEquippedStats: () => { attack: number; defense: number };
+  getEquippedStats: () => { attack: number; defense: number; weight: number; speed: number; crit: number };
 }
 
 export const createInventorySlice: StateCreator<InventorySlice, [], [], InventorySlice> = (set, get) => ({
@@ -77,16 +77,19 @@ export const createInventorySlice: StateCreator<InventorySlice, [], [], Inventor
 
   getEquippedStats: () => {
     const state = get();
-    let attack = 0, defense = 0;
+    let attack = 0, defense = 0, weight = 0, speed = 0, crit = 0;
     for (const itemId of Object.values(state.equipped)) {
       if (itemId) {
         const def = ITEMS[itemId];
         if (def) {
           attack += def.attack || 0;
           defense += def.defense || 0;
+          weight += def.weight || 0;
+          speed += def.speed || 0;
+          crit += def.crit || 0;
         }
       }
     }
-    return { attack, defense };
+    return { attack, defense, weight, speed, crit };
   },
 });

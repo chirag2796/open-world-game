@@ -12,7 +12,7 @@ export interface CombatSlice {
   battle: BattleState;
 
   // Actions
-  startBattle: (biome: BiomeType, playerLevel: number, atk: number, def: number, hp: number, maxHP: number, xp: number, gold: number, speed: number) => void;
+  startBattle: (biome: BiomeType, playerLevel: number, atk: number, def: number, hp: number, maxHP: number, xp: number, gold: number, speed: number, crit?: number) => void;
   startBattleWith: (enemyId: string, playerLevel: number, atk: number, def: number, hp: number, maxHP: number, xp: number, gold: number) => void;
   endBattle: () => void;
   setBattle: (partial: Partial<BattleState>) => void;
@@ -37,6 +37,8 @@ const INITIAL_BATTLE: BattleState = {
   playerMaxHP: 0,
   playerATK: 0,
   playerDEF: 0,
+  playerSpeed: 10,
+  playerCrit: 0,
   turn: 'player',
   phase: 'intro',
   message: '',
@@ -62,7 +64,7 @@ const INITIAL_BATTLE: BattleState = {
 export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> = (set, get) => ({
   battle: { ...INITIAL_BATTLE },
 
-  startBattle: (biome, playerLevel, atk, def, hp, maxHP, xp, gold, speed) => {
+  startBattle: (biome, playerLevel, atk, def, hp, maxHP, xp, gold, speed, crit = 0) => {
     const enemy = getRandomEnemy(biome, playerLevel);
     set({
       battle: {
@@ -74,6 +76,8 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
         playerMaxHP: maxHP,
         playerATK: atk,
         playerDEF: def,
+        playerSpeed: speed,
+        playerCrit: crit,
         playerXP: xp,
         playerLevel: playerLevel,
         playerGold: gold,
@@ -157,7 +161,7 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
 
     const enemyMove = pickEnemyMove(battle.enemy.moves);
     const turnOrder = calculateTurnOrder(
-      10, // player base speed (could be enhanced later)
+      battle.playerSpeed,
       battle.enemy.speed,
       playerMove,
       enemyMove,
@@ -361,8 +365,9 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
         }
 
         // Damage move
+        const critBonus = isPlayer ? b.playerCrit : 0;
         const result = calculateDamage(
-          move, attackerAtk, attackerLevel, defenderDef, defenderType, atkBoost, defBoost,
+          move, attackerAtk, attackerLevel, defenderDef, defenderType, atkBoost, defBoost, critBonus,
         );
 
         if (result.missed) {
@@ -385,11 +390,13 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
         };
 
         let dmgMsg: string;
+        const critLabel = result.crit ? ' Critical hit!' : '';
         if (isPlayer) {
           // Player attacks enemy
           const newEnemyHP = Math.max(0, b.enemyHP - finalDamage);
           updates.enemyHP = newEnemyHP;
           dmgMsg = `You used ${move.name}! Dealt ${finalDamage} damage!`;
+          if (result.crit) dmgMsg += critLabel;
           if (effectLabel) dmgMsg += ` ${effectLabel}`;
 
           // Check for effect application (poison, lower_def on enemy)

@@ -225,6 +225,10 @@ export type ItemCategory = 'weapons' | 'armor' | 'items' | 'key_items';
 
 export type EquipSlot = 'weapon' | 'head' | 'body' | 'legs' | 'accessory';
 
+export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'legendary';
+
+export type WeaponMaterial = 'wood' | 'iron' | 'steel' | 'wootz' | 'celestial';
+
 export interface ItemDef {
   id: string;
   name: string;
@@ -236,8 +240,14 @@ export interface ItemDef {
   equipSlot?: EquipSlot;
   attack?: number;
   defense?: number;
+  speed?: number;        // speed bonus (negative = slower)
+  weight?: number;       // equipment weight (reduces effective speed)
+  crit?: number;         // critical hit chance bonus (0-100)
   effect?: string;
   value: number;
+  rarity?: ItemRarity;
+  material?: WeaponMaterial;
+  history?: string;      // historical flavor text
 }
 
 export interface InventorySlot {
@@ -300,7 +310,8 @@ export interface EnemyDef {
   headColor: string;
   description: string;
   creatureType: CreatureType;
-  moves: string[];      // move IDs (up to 4)
+  moves: string[];        // move IDs (up to 4)
+  lootTableId?: string;   // references LOOT_TABLES for item drops
 }
 
 export type BattleAction = 'attack' | 'defend' | 'item' | 'run' | 'move';
@@ -324,6 +335,8 @@ export interface BattleState {
   playerMaxHP: number;
   playerATK: number;
   playerDEF: number;
+  playerSpeed: number;
+  playerCrit: number;
   turn: 'player' | 'enemy' | 'result';
   phase: 'intro' | 'select' | 'animate' | 'enemy_turn' | 'result';
   message: string;
