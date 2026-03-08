@@ -234,91 +234,73 @@ STATES['d'] = STATES['D'];
 // Format: [TileType, cumulativeWeight] — weights sum to 1.0
 type WeightedTile = [TileType, number];
 
-// Redesigned biome variety: more uniform base with intentional features.
-// Encounter zones (TALL_GRASS, SAND_DUNES) are placed by the route system,
-// not scattered randomly. This makes each biome feel distinct and purposeful.
+// Pokemon-style biome design: each biome uses 90%+ of ONE dominant tile.
+// Variety comes from structures, decorations, and routes — NOT random tile noise.
+// This makes regions look clean and distinct, like designed game areas.
 const BIOME_VARIETY: Record<BiomeType, WeightedTile[]> = {
   ocean: [[TileType.OCEAN, 1.0]],
   snow: [
-    [TileType.SNOW, 0.65],
-    [TileType.ICE, 0.80],
-    [TileType.MOUNTAIN, 0.95],
-    [TileType.CLIFF, 1.0],
+    [TileType.SNOW, 0.92],
+    [TileType.ICE, 0.97],
+    [TileType.MOUNTAIN, 1.0],
   ],
   mountain: [
-    [TileType.MOUNTAIN, 0.50],
-    [TileType.ROCKS, 0.70],
-    [TileType.CLIFF, 0.85],
-    [TileType.ROCKY_PATH, 0.92],
-    [TileType.SNOW, 1.0],
+    [TileType.MOUNTAIN, 0.88],
+    [TileType.ROCKS, 0.95],
+    [TileType.CLIFF, 1.0],
   ],
   desert: [
-    [TileType.DESERT, 0.65],
-    [TileType.CRACKED_EARTH, 0.80],
-    [TileType.DRY_GRASS, 0.90],
-    [TileType.ROCKS, 0.96],
-    [TileType.CACTUS, 1.0],
+    [TileType.DESERT, 0.92],
+    [TileType.SAND_DUNES, 0.97],
+    [TileType.CRACKED_EARTH, 1.0],
   ],
   plains: [
-    [TileType.PLAINS, 0.70],
-    [TileType.FARM, 0.82],
-    [TileType.FLOWERS, 0.90],
-    [TileType.GARDEN, 0.96],
-    [TileType.TALL_GRASS, 1.0],
+    [TileType.PLAINS, 0.92],
+    [TileType.FARM, 0.97],
+    [TileType.FLOWERS, 1.0],
   ],
   forest: [
-    [TileType.FOREST, 0.55],
-    [TileType.TREE_BANYAN, 0.70],
-    [TileType.PLAINS, 0.80],
-    [TileType.TALL_GRASS, 0.90],
-    [TileType.FLOWERS, 0.96],
-    [TileType.BAMBOO, 1.0],
+    [TileType.FOREST, 0.88],
+    [TileType.PLAINS, 0.95],
+    [TileType.TALL_GRASS, 1.0],
   ],
   dense_forest: [
-    [TileType.DENSE_JUNGLE, 0.50],
-    [TileType.FOREST, 0.72],
-    [TileType.TREE_BANYAN, 0.84],
-    [TileType.BAMBOO, 0.92],
+    [TileType.DENSE_JUNGLE, 0.88],
+    [TileType.FOREST, 0.95],
     [TileType.SWAMP, 1.0],
   ],
   plateau: [
-    [TileType.PLATEAU, 0.55],
-    [TileType.ROCKS, 0.70],
-    [TileType.PLAINS, 0.82],
-    [TileType.DRY_GRASS, 0.92],
-    [TileType.CLIFF, 1.0],
+    [TileType.PLATEAU, 0.88],
+    [TileType.DRY_GRASS, 0.95],
+    [TileType.ROCKS, 1.0],
   ],
   wetland: [
-    [TileType.SWAMP, 0.35],
-    [TileType.MANGROVE, 0.50],
-    [TileType.PLAINS, 0.65],
-    [TileType.SHALLOW_WATER, 0.80],
-    [TileType.TALL_GRASS, 0.92],
-    [TileType.LAKE, 1.0],
+    [TileType.SWAMP, 0.50],
+    [TileType.PLAINS, 0.75],
+    [TileType.MANGROVE, 0.90],
+    [TileType.TALL_GRASS, 1.0],
   ],
   coastal: [
-    [TileType.PLAINS, 0.40],
-    [TileType.TREE_PALM, 0.55],
-    [TileType.FARM, 0.68],
-    [TileType.FLOWERS, 0.78],
-    [TileType.GARDEN, 0.88],
-    [TileType.TALL_GRASS, 1.0],
+    [TileType.PLAINS, 0.85],
+    [TileType.FARM, 0.93],
+    [TileType.FLOWERS, 1.0],
   ],
 };
 
-// Multi-octave smooth noise for natural-looking terrain clusters.
-// Uses 3 scales: mega (16x16), coarse (8x8), fine (per-tile) for
-// large biome patches with natural irregular edges.
+// Large-scale noise for biome sub-variation.
+// With 90%+ base tile per biome, this mainly controls where the rare
+// secondary tiles appear in large coherent patches (not scattered noise).
 function pickBiomeTileSmooth(biome: BiomeType, x: number, y: number): TileType {
+  // Use large-scale noise (16x16 blocks) so variations form big patches
   const megaX = Math.floor(x / 16);
   const megaY = Math.floor(y / 16);
   const megaH = hash(megaX * 13, megaY * 37);
-  const coarseX = Math.floor(x / 8);
-  const coarseY = Math.floor(y / 8);
+  // Small amount of medium-scale noise for organic edges
+  const coarseX = Math.floor(x / 10);
+  const coarseY = Math.floor(y / 10);
   const coarseH = hash(coarseX * 17, coarseY * 31);
-  const fineH = hash(x * 7, y * 11);
-  // 50% mega for large patches, 35% coarse for medium clusters, 15% fine for edges
-  const blended = megaH * 0.50 + coarseH * 0.35 + fineH * 0.15;
+  // 70% mega for large coherent patches, 30% coarse for natural edges
+  const blended = megaH * 0.70 + coarseH * 0.30;
   const variants = BIOME_VARIETY[biome];
   for (const [tile, threshold] of variants) {
     if (blended < threshold) return tile;

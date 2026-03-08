@@ -51,11 +51,14 @@ const GRASS_TILES = new Set<TileType>([
   TileType.TREE_PINE, TileType.TREE_PALM, TileType.TREE_BANYAN,
   TileType.SWAMP, TileType.CHARBAGH, TileType.HUT,
   TileType.PIETRA_DURA,
+  // New tiles that should render as grass-based terrain
+  TileType.MANGROVE, TileType.BAMBOO, TileType.DRY_GRASS,
 ]);
 
 const WATER_TILES = new Set<TileType>([
   TileType.OCEAN, TileType.DEEP_OCEAN, TileType.SHALLOW_WATER,
   TileType.RIVER, TileType.LAKE, TileType.CANAL, TileType.BAORI_WATER,
+  TileType.ICE,
 ]);
 
 const ROAD_TILES = new Set<TileType>([
@@ -63,6 +66,12 @@ const ROAD_TILES = new Set<TileType>([
   TileType.DESERT, TileType.SAND_DUNES, TileType.CAMPSITE,
   TileType.BRIDGE, TileType.COURTYARD, TileType.SANDSTONE,
   TileType.MARBLE,
+  // Mountain/rock tiles render as brown/tan road terrain (looks like rocky ground)
+  TileType.MOUNTAIN, TileType.CLIFF, TileType.ROCKS, TileType.PLATEAU,
+  TileType.ROCKY_PATH, TileType.CRACKED_EARTH, TileType.SNOW,
+  TileType.STAIRS, TileType.RUINS,
+  // Ledges render as road/cliff
+  TileType.LEDGE_S, TileType.LEDGE_N, TileType.LEDGE_E, TileType.LEDGE_W,
 ]);
 
 // ─── Auto-tile Sets (from Tiled Wang tile definitions) ──────
@@ -197,6 +206,7 @@ const ROAD_AUTO: AutoTileSet = {
 const DIRT_EDGE_TILES = new Set<TileType>([
   TileType.FOREST, TileType.DENSE_JUNGLE, TileType.SWAMP,
   TileType.TALL_GRASS, TileType.TREE_PINE, TileType.TREE_BANYAN,
+  TileType.MANGROVE, TileType.BAMBOO,
 ]);
 
 // ─── Deterministic variety ──────────────────────────────────

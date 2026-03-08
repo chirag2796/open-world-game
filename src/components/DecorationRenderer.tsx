@@ -30,8 +30,18 @@ const HOUSE_SPRITES: { source: ImageSourcePropType; w: number; h: number }[] = [
 const WELL_SPRITE = { source: require('../../assets/sprites/decorations/buildings/Well_Hay_1.png'), w: 56, h: 74 };
 const GATE_SPRITE = { source: require('../../assets/sprites/decorations/buildings/CityWall_Gate_1.png'), w: 80, h: 96 };
 
+// Rocks — for mountain, cliff, boulder decorations
+const ROCK_SPRITES: { source: ImageSourcePropType; w: number; h: number }[] = [
+  { source: require('../../assets/sprites/decorations/rocks/Rock_Brown_1.png'), w: 22, h: 18 },
+  { source: require('../../assets/sprites/decorations/rocks/Rock_Brown_2.png'), w: 16, h: 14 },
+  { source: require('../../assets/sprites/decorations/rocks/Rock_Brown_4.png'), w: 32, h: 21 },
+  { source: require('../../assets/sprites/decorations/rocks/Rock_Brown_6.png'), w: 16, h: 11 },
+  { source: require('../../assets/sprites/decorations/rocks/Rock_Brown_9.png'), w: 46, h: 33 },
+];
+
 // Props
 const SIGN_SPRITE = { source: require('../../assets/sprites/decorations/props/Sign_1.png'), w: 24, h: 22 };
+const CHOPPED_TREE = { source: require('../../assets/sprites/decorations/props/Chopped_Tree_1.png'), w: 32, h: 22 };
 const BARREL_SPRITE = { source: require('../../assets/sprites/decorations/props/Barrel_Small_Empty.png'), w: 16, h: 20 };
 const CRATE_SPRITE = { source: require('../../assets/sprites/decorations/props/Crate_Medium_Closed.png'), w: 16, h: 21 };
 const HAYSTACK_SPRITE = { source: require('../../assets/sprites/decorations/props/HayStack_2.png'), w: 29, h: 32 };
@@ -96,9 +106,18 @@ function getDecorationForTile(
     }
     case TileType.ROCKY_PATH:
     case TileType.ROCKS:
-    case TileType.BOULDER: {
-      if (hash > 0.2) return null;
-      return { ...SIGN_SPRITE, offsetY: SCALED_TILE - SIGN_SPRITE.h };
+    case TileType.BOULDER:
+    case TileType.MOUNTAIN:
+    case TileType.CLIFF: {
+      // Rock decorations — sparse for mountains, denser for rocks/boulders
+      const threshold = (tileType === TileType.MOUNTAIN || tileType === TileType.CLIFF) ? 0.15 : 0.3;
+      if (hash > threshold) return null;
+      const idx = Math.floor(hash * 10 * ROCK_SPRITES.length) % ROCK_SPRITES.length;
+      const rock = ROCK_SPRITES[idx];
+      return { ...rock, offsetY: SCALED_TILE - rock.h - 2 };
+    }
+    case TileType.FALLEN_LOG: {
+      return { ...CHOPPED_TREE, offsetY: SCALED_TILE - CHOPPED_TREE.h - 2 };
     }
     case TileType.SWAMP: {
       if (hash > 0.3) return null;

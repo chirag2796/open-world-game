@@ -86,6 +86,21 @@ export const TILE_COLORS: Record<TileType, string> = {
   [TileType.BORDER_POST]: '#8a6840',
   [TileType.CANAL]: '#5098c0',
   [TileType.CHARBAGH]: '#308838',
+  // Height/obstacle tiles
+  [TileType.LEDGE_S]: '#585050',
+  [TileType.LEDGE_N]: '#585050',
+  [TileType.LEDGE_E]: '#585050',
+  [TileType.LEDGE_W]: '#585050',
+  [TileType.STAIRS]: '#c8a870',
+  [TileType.ROCKY_PATH]: '#a09070',
+  [TileType.CRACKED_EARTH]: '#c8a060',
+  [TileType.MANGROVE]: '#2d5030',
+  [TileType.BAMBOO]: '#3a7030',
+  [TileType.CACTUS]: '#a07830',
+  [TileType.FALLEN_LOG]: '#6a4a28',
+  [TileType.BOULDER]: '#807870',
+  [TileType.LOCKED_GATE]: '#8a6840',
+  [TileType.DRY_GRASS]: '#b8a050',
 };
 
 // Detail overlays per tile type
@@ -145,6 +160,21 @@ export const TILE_DETAIL: Partial<Record<TileType, { color: string; type: 'dots'
   [TileType.BORDER_POST]: { color: '#705028', type: 'border' },
   [TileType.CANAL]: { color: '#3878a0', type: 'stripe' },
   [TileType.CHARBAGH]: { color: '#207028', type: 'cross' },
+  // Height/obstacle tiles
+  [TileType.LEDGE_S]: { color: '#484040', type: 'stripe' },
+  [TileType.LEDGE_N]: { color: '#484040', type: 'stripe' },
+  [TileType.LEDGE_E]: { color: '#484040', type: 'stripe' },
+  [TileType.LEDGE_W]: { color: '#484040', type: 'stripe' },
+  [TileType.STAIRS]: { color: '#a08050', type: 'stripe' },
+  [TileType.ROCKY_PATH]: { color: '#887060', type: 'dots' },
+  [TileType.CRACKED_EARTH]: { color: '#b08840', type: 'cross' },
+  [TileType.MANGROVE]: { color: '#1a3820', type: 'center' },
+  [TileType.BAMBOO]: { color: '#2a5820', type: 'stripe' },
+  [TileType.CACTUS]: { color: '#886020', type: 'center' },
+  [TileType.FALLEN_LOG]: { color: '#5a3a18', type: 'stripe' },
+  [TileType.BOULDER]: { color: '#706060', type: 'center' },
+  [TileType.LOCKED_GATE]: { color: '#705028', type: 'border' },
+  [TileType.DRY_GRASS]: { color: '#a09030', type: 'dots' },
 };
 
 export const PALETTE = {
