@@ -5,7 +5,8 @@ import { SCALED_TILE, GAME_AREA_HEIGHT, SCREEN_WIDTH, PALETTE } from '../engine/
 
 // Characters render larger than tiles for better visibility
 const CHAR_SIZE = 64;
-const CHAR_OFFSET = (CHAR_SIZE - SCALED_TILE) / 2; // center on tile
+const CHAR_OFFSET_X = (CHAR_SIZE - SCALED_TILE) / 2; // center horizontally on tile
+const CHAR_OFFSET_Y = CHAR_SIZE - SCALED_TILE;        // anchor feet to tile bottom
 
 // ─── Puny Characters Sprite Sheet Layout ─────────────────────
 // Each sheet: 768x256, 32x32 frames, 24 cols × 8 rows
@@ -76,19 +77,6 @@ function getSheet(entityId: string): ImageSourcePropType {
 
 // ─── Animated Puny Character ─────────────────────────────────
 
-// Character shadow ellipse rendered under each sprite
-const CharShadow: React.FC<{ size: number }> = memo(({ size }) => (
-  <View style={{
-    position: 'absolute',
-    bottom: -2,
-    left: size * 0.15,
-    width: size * 0.7,
-    height: size * 0.2,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-    borderRadius: size,
-  }} />
-));
-
 const PunySprite: React.FC<{
   sheetSource: ImageSourcePropType;
   direction: Direction;
@@ -108,7 +96,6 @@ const PunySprite: React.FC<{
 
   return (
     <View style={{ width: size, height: size }}>
-      <CharShadow size={size} />
       <View style={{
         width: size,
         height: size,
@@ -214,8 +201,8 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
           key={entity.id}
           style={{
             position: 'absolute',
-            left: entity.screenX - CHAR_OFFSET,
-            top: entity.screenY - CHAR_OFFSET,
+            left: entity.screenX - CHAR_OFFSET_X,
+            top: entity.screenY - CHAR_OFFSET_Y,
             zIndex: entity.zIndex + 100,
           }}
         >
