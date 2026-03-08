@@ -1630,7 +1630,114 @@ const STORY_NPCS: NPC[] = [
   },
 ];
 
-export const WORLD_NPCS: NPC[] = STORY_NPCS;
+// === ANIMALS: ambient creatures placed across the world ===
+const WORLD_ANIMALS: NPC[] = [
+  // -- Farms near Delhi/Mathura --
+  {
+    id: 'animal-horse-1', name: '', position: { x: 104, y: 66 }, direction: 'down',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Shahjahanabad',
+  },
+  {
+    id: 'animal-goat-1', name: '', position: { x: 97, y: 70 }, direction: 'right',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Mathura',
+  },
+  {
+    id: 'animal-goose-1', name: '', position: { x: 100, y: 68 }, direction: 'left',
+    behavior: 'wander', wanderRadius: 2, dialog: [], settlement: 'Mathura',
+  },
+
+  // -- Amber/Jaipur area --
+  {
+    id: 'animal-horse-2', name: '', position: { x: 72, y: 92 }, direction: 'right',
+    behavior: 'wander', wanderRadius: 4, dialog: [], settlement: 'Amber',
+  },
+  {
+    id: 'animal-goat-2', name: '', position: { x: 78, y: 86 }, direction: 'down',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Amber',
+  },
+
+  // -- Shimla / Himalayan foothills --
+  {
+    id: 'animal-goat-3', name: '', position: { x: 92, y: 36 }, direction: 'left',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Shimla',
+  },
+  {
+    id: 'animal-goatling-1', name: '', position: { x: 96, y: 34 }, direction: 'down',
+    behavior: 'wander', wanderRadius: 2, dialog: [], settlement: 'Shimla',
+  },
+
+  // -- Lucknow/Varanasi area --
+  {
+    id: 'animal-rabbit-1', name: '', position: { x: 132, y: 80 }, direction: 'down',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Lucknow',
+  },
+  {
+    id: 'animal-goose-2', name: '', position: { x: 144, y: 92 }, direction: 'right',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Varanasi',
+  },
+
+  // -- Bhopal forests --
+  {
+    id: 'animal-rabbit-2', name: '', position: { x: 100, y: 120 }, direction: 'left',
+    behavior: 'wander', wanderRadius: 4, dialog: [], settlement: 'Bhopal',
+  },
+  {
+    id: 'animal-rabbit-3', name: '', position: { x: 96, y: 114 }, direction: 'right',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Bhopal',
+  },
+
+  // -- Guwahati / Northeast --
+  {
+    id: 'animal-goose-3', name: '', position: { x: 214, y: 114 }, direction: 'down',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Guwahati',
+  },
+  {
+    id: 'animal-rabbit-4', name: '', position: { x: 218, y: 110 }, direction: 'left',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Guwahati',
+  },
+
+  // -- Hampi / Deccan plateau --
+  {
+    id: 'animal-goat-4', name: '', position: { x: 82, y: 238 }, direction: 'right',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Hampi',
+  },
+
+  // -- Ahmedabad / Gujarat --
+  {
+    id: 'animal-horse-3', name: '', position: { x: 40, y: 150 }, direction: 'down',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Ahmedabad',
+  },
+  {
+    id: 'animal-goose-4', name: '', position: { x: 36, y: 146 }, direction: 'right',
+    behavior: 'wander', wanderRadius: 2, dialog: [], settlement: 'Ahmedabad',
+  },
+
+  // -- Pataliputra --
+  {
+    id: 'animal-goat-5', name: '', position: { x: 156, y: 100 }, direction: 'down',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Pataliputra',
+  },
+
+  // -- Puri coast --
+  {
+    id: 'animal-goose-5', name: '', position: { x: 176, y: 158 }, direction: 'left',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Puri',
+  },
+
+  // -- Haridwar / Ganga foothills --
+  {
+    id: 'animal-goat-6', name: '', position: { x: 128, y: 42 }, direction: 'right',
+    behavior: 'wander', wanderRadius: 3, dialog: [], settlement: 'Haridwar',
+  },
+
+  // -- Kozhikode coast --
+  {
+    id: 'animal-gosling-1', name: '', position: { x: 90, y: 290 }, direction: 'down',
+    behavior: 'wander', wanderRadius: 2, dialog: [], settlement: 'Kozhikode',
+  },
+];
+
+export const WORLD_NPCS: NPC[] = [...STORY_NPCS, ...WORLD_ANIMALS];
 
 // === MINIMAP COLORS ===
 

@@ -358,6 +358,9 @@ const WorldScreen: React.FC = () => {
       const dx = npcTileX - pTileX;
       const dy = npcTileY - pTileY;
       if (Math.sqrt(dx * dx + dy * dy) < 1.5) {
+        // Skip NPCs with no dialog (e.g., animals)
+        if (npc.dialog.length === 0 && !npc.dialogTreeId) continue;
+
         playSFX('npc_talk');
 
         // Try branching dialogue first
