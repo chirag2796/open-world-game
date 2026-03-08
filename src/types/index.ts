@@ -253,7 +253,39 @@ export interface EquipState {
   accessory: string | null;
 }
 
-// Battle system
+// Battle system — creature types and type effectiveness
+
+export type CreatureType = 'mythic' | 'soldier' | 'beast' | 'automaton' | 'naga';
+
+// Type chart: attacker type → set of types it's strong against (2x) / weak against (0.5x)
+export const TYPE_STRONG: Record<CreatureType, Set<CreatureType>> = {
+  mythic:    new Set(['beast', 'naga']),       // divine power overcomes nature
+  soldier:   new Set(['automaton', 'naga']),    // discipline defeats constructs
+  beast:     new Set(['soldier', 'mythic']),    // primal ferocity
+  automaton: new Set(['beast', 'naga']),        // mechanical precision
+  naga:      new Set(['soldier', 'mythic']),    // serpent cunning
+};
+export const TYPE_WEAK: Record<CreatureType, Set<CreatureType>> = {
+  mythic:    new Set(['soldier', 'naga']),
+  soldier:   new Set(['mythic', 'beast']),
+  beast:     new Set(['automaton', 'naga']),
+  automaton: new Set(['soldier', 'mythic']),
+  naga:      new Set(['beast', 'automaton']),
+};
+
+// Combat moves
+export interface CombatMove {
+  id: string;
+  name: string;
+  type: CreatureType;
+  power: number;        // base power (0 = status move)
+  accuracy: number;     // 0-100
+  priority: number;     // higher goes first (default 0, quick strikes = 1)
+  effect?: 'heal_self' | 'boost_atk' | 'boost_def' | 'lower_def' | 'poison';
+  effectChance?: number;
+  description: string;
+}
+
 export interface EnemyDef {
   id: string;
   name: string;
@@ -267,9 +299,22 @@ export interface EnemyDef {
   bodyColor: string;
   headColor: string;
   description: string;
+  creatureType: CreatureType;
+  moves: string[];      // move IDs (up to 4)
 }
 
-export type BattleAction = 'attack' | 'defend' | 'item' | 'run';
+export type BattleAction = 'attack' | 'defend' | 'item' | 'run' | 'move';
+
+// Stack machine states for combat sequencing
+export type CombatStackState =
+  | { type: 'select_action' }
+  | { type: 'execute_move'; actorId: string; moveId: string; targetId: string }
+  | { type: 'play_animation'; animation: 'attack' | 'defend' | 'hit' | 'heal' | 'faint'; targetId: string }
+  | { type: 'apply_damage'; targetId: string; damage: number; effectiveness: number }
+  | { type: 'check_faint'; targetId: string }
+  | { type: 'show_message'; message: string; duration: number }
+  | { type: 'end_turn' }
+  | { type: 'battle_result'; result: 'win' | 'lose' | 'run' };
 
 export interface BattleState {
   active: boolean;
@@ -288,4 +333,16 @@ export interface BattleState {
   playerLevel: number;
   playerGold: number;
   lastAction: BattleAction | null;
+  // New Phase 4 fields
+  combatStack: CombatStackState[];
+  turnOrder: string[];     // entity IDs sorted by speed
+  combatLog: string[];     // last 5 messages
+  playerMoves: string[];   // move IDs available to player
+  effectiveness: number;   // last move effectiveness (0.5, 1, 2)
+  atkBoost: number;        // player attack stage modifier
+  defBoost: number;        // player defense stage modifier
+  enemyAtkBoost: number;
+  enemyDefBoost: number;
+  poisoned: boolean;       // player poisoned
+  enemyPoisoned: boolean;
 }

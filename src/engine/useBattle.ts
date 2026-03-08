@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { BattleState, BattleAction, EnemyDef, BiomeType } from '../types';
 import { getRandomEnemy, xpForLevel } from '../data/enemies';
 import { ITEMS } from '../data/items';
+import { DEFAULT_PLAYER_MOVES } from '../data/combatMoves';
 import { InventoryState } from './useInventory';
 
 const INITIAL_PLAYER_HP = 50;
@@ -29,6 +30,17 @@ export function useBattle(
     playerLevel: 1,
     playerGold: 20,
     lastAction: null,
+    combatStack: [],
+    turnOrder: [],
+    combatLog: [],
+    playerMoves: DEFAULT_PLAYER_MOVES,
+    effectiveness: 1,
+    atkBoost: 0,
+    defBoost: 0,
+    enemyAtkBoost: 0,
+    enemyDefBoost: 0,
+    poisoned: false,
+    enemyPoisoned: false,
   });
 
   const battleRef = useRef(battle);

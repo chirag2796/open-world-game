@@ -1,15 +1,33 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { BattleState, BattleAction } from '../types';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView } from 'react-native';
+import { BattleState, BattleAction, CreatureType, CombatMove } from '../types';
 import { ITEMS } from '../data/items';
+import { MOVES } from '../data/combatMoves';
 import { InventoryState } from '../engine/useInventory';
 import { PALETTE, SCREEN_WIDTH, SCREEN_HEIGHT } from '../engine/constants';
 import ParticleEffect, { ParticleType } from './ParticleEffect';
 
+// Type color mapping for move buttons and badges
+const TYPE_COLORS: Record<CreatureType, string> = {
+  mythic: '#9060c0',
+  soldier: '#a05030',
+  beast: '#60a030',
+  automaton: '#808090',
+  naga: '#3080a0',
+};
+
+const TYPE_LABELS: Record<CreatureType, string> = {
+  mythic: 'MYT',
+  soldier: 'SOL',
+  beast: 'BST',
+  automaton: 'AUT',
+  naga: 'NAG',
+};
+
 interface BattleScreenProps {
   battle: BattleState;
   inventory: InventoryState;
-  onAction: (action: BattleAction, itemId?: string) => void;
+  onAction: (action: BattleAction, payload?: string) => void;
   onClose: () => void;
 }
 
@@ -40,14 +58,10 @@ const EnemySprite: React.FC<{ bodyColor: string; headColor: string; shake: boole
 
   return (
     <Animated.View style={[styles.enemySprite, { transform: [{ translateX: shakeAnim }] }]}>
-      {/* Body */}
       <View style={[styles.enemyBody, { backgroundColor: bodyColor }]} />
-      {/* Head */}
       <View style={[styles.enemyHead, { backgroundColor: headColor }]} />
-      {/* Eyes */}
       <View style={styles.enemyEyeL} />
       <View style={styles.enemyEyeR} />
-      {/* Arms */}
       <View style={[styles.enemyArmL, { backgroundColor: bodyColor }]} />
       <View style={[styles.enemyArmR, { backgroundColor: bodyColor }]} />
     </Animated.View>
@@ -70,17 +84,22 @@ const PlayerSprite: React.FC<{ flash: boolean }> = memo(({ flash }) => {
 
   return (
     <Animated.View style={[styles.playerSprite, { opacity: flashAnim }]}>
-      {/* Body */}
       <View style={styles.pBody} />
-      {/* Head */}
       <View style={styles.pHead} />
-      {/* Shield arm */}
       <View style={styles.pShield} />
-      {/* Sword arm */}
       <View style={styles.pSword} />
     </Animated.View>
   );
 });
+
+// Type badge component
+const TypeBadge: React.FC<{ type: CreatureType }> = memo(({ type }) => (
+  <View style={[styles.typeBadge, { backgroundColor: TYPE_COLORS[type] }]}>
+    <Text style={styles.typeBadgeText}>{TYPE_LABELS[type]}</Text>
+  </View>
+));
+
+type ActionPanel = 'main' | 'moves' | 'items';
 
 const BattleScreen: React.FC<BattleScreenProps> = ({
   battle,
@@ -88,40 +107,41 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
   onAction,
   onClose,
 }) => {
-  const [showItems, setShowItems] = useState(false);
+  const [panel, setPanel] = useState<ActionPanel>('main');
   const [enemyShake, setEnemyShake] = useState(false);
   const [playerFlash, setPlayerFlash] = useState(false);
   const [particleType, setParticleType] = useState<ParticleType | null>(null);
   const [particlePos, setParticlePos] = useState({ x: 0, y: 0 });
   const screenFlash = useRef(new Animated.Value(0)).current;
   const prevPhaseRef = useRef(battle.phase);
-  const prevActionRef = useRef(battle.lastAction);
+
+  // Reset panel when we return to select
+  useEffect(() => {
+    if (battle.phase === 'select') {
+      setPanel('main');
+    }
+  }, [battle.phase]);
 
   // Trigger animations on phase changes
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = battle.phase;
-    const lastAction = battle.lastAction;
-    const prevAction = prevActionRef.current;
-    prevActionRef.current = lastAction;
 
     if (battle.phase === 'animate' && prev === 'select') {
-      // Player attacked enemy
-      setEnemyShake(true);
-      setTimeout(() => setEnemyShake(false), 400);
-
-      if (lastAction === 'attack') {
+      // Player acted — shake enemy
+      if (battle.lastAction === 'move') {
+        setEnemyShake(true);
+        setTimeout(() => setEnemyShake(false), 400);
         setParticlePos({ x: SCREEN_WIDTH - 70, y: 110 });
         setParticleType('slash');
-        // Screen flash
         Animated.sequence([
           Animated.timing(screenFlash, { toValue: 0.3, duration: 60, useNativeDriver: true }),
           Animated.timing(screenFlash, { toValue: 0, duration: 200, useNativeDriver: true }),
         ]).start();
-      } else if (lastAction === 'defend') {
+      } else if (battle.lastAction === 'defend') {
         setParticlePos({ x: 60, y: SCREEN_HEIGHT * 0.35 });
         setParticleType('defend');
-      } else if (lastAction === 'item') {
+      } else if (battle.lastAction === 'item') {
         setParticlePos({ x: 60, y: SCREEN_HEIGHT * 0.35 });
         setParticleType('heal');
       }
@@ -153,20 +173,137 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
     })
     .map(s => ({ ...s, def: ITEMS[s.itemId] }));
 
+  // Resolve player moves
+  const playerMoves: CombatMove[] = battle.playerMoves
+    .map(id => MOVES[id])
+    .filter(Boolean);
+
+  const renderActionPanel = () => {
+    if (battle.phase === 'result') {
+      return (
+        <TouchableOpacity style={styles.fullBtn} onPress={onClose}>
+          <Text style={styles.fullBtnText}>
+            {battle.result === 'win' ? 'VICTORY!' : battle.result === 'lose' ? 'CONTINUE...' : 'OK'}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+
+    if (battle.phase !== 'select') {
+      return (
+        <View style={styles.waitingBox}>
+          <Text style={styles.waitingText}>...</Text>
+        </View>
+      );
+    }
+
+    // Main action menu
+    if (panel === 'main') {
+      return (
+        <View style={styles.actionGrid}>
+          <TouchableOpacity style={[styles.actionBtn, styles.atkBtn]} onPress={() => setPanel('moves')}>
+            <Text style={styles.actionBtnText}>MOVES</Text>
+            <Text style={styles.actionSubText}>{playerMoves.length} available</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionBtn, styles.defBtn]} onPress={() => onAction('defend')}>
+            <Text style={styles.actionBtnText}>DEFEND</Text>
+            <Text style={styles.actionSubText}>DEF x2</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionBtn, styles.itemBtn]} onPress={() => setPanel('items')}>
+            <Text style={styles.actionBtnText}>ITEM</Text>
+            <Text style={styles.actionSubText}>{healItems.length} usable</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionBtn, styles.runBtn]} onPress={() => onAction('run')}>
+            <Text style={styles.actionBtnText}>RUN</Text>
+            <Text style={styles.actionSubText}>~50%</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    // Move selection panel
+    if (panel === 'moves') {
+      return (
+        <View style={styles.movePanel}>
+          <View style={styles.movePanelHeader}>
+            <Text style={styles.movePanelTitle}>SELECT MOVE</Text>
+            <TouchableOpacity onPress={() => setPanel('main')}>
+              <Text style={styles.movePanelBack}>BACK</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.moveGrid}>
+            {playerMoves.map(move => (
+              <TouchableOpacity
+                key={move.id}
+                style={[styles.moveBtn, { borderColor: TYPE_COLORS[move.type] }]}
+                onPress={() => onAction('move', move.id)}
+              >
+                <View style={styles.moveHeader}>
+                  <Text style={styles.moveName}>{move.name}</Text>
+                  <View style={[styles.moveTypeBadge, { backgroundColor: TYPE_COLORS[move.type] }]}>
+                    <Text style={styles.moveTypeText}>{TYPE_LABELS[move.type]}</Text>
+                  </View>
+                </View>
+                <View style={styles.moveStats}>
+                  {move.power > 0 ? (
+                    <Text style={styles.moveStat}>PWR:{move.power}</Text>
+                  ) : (
+                    <Text style={[styles.moveStat, { color: '#80c0ff' }]}>STATUS</Text>
+                  )}
+                  <Text style={styles.moveStat}>ACC:{move.accuracy}</Text>
+                  {move.priority > 0 && <Text style={[styles.moveStat, { color: PALETTE.yellow }]}>FAST</Text>}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      );
+    }
+
+    // Items panel
+    return (
+      <View style={styles.itemList}>
+        <View style={styles.itemListHeader}>
+          <Text style={styles.itemListTitle}>USE ITEM</Text>
+          <TouchableOpacity onPress={() => setPanel('main')}>
+            <Text style={styles.itemListBack}>BACK</Text>
+          </TouchableOpacity>
+        </View>
+        {healItems.length === 0 ? (
+          <Text style={styles.noItemsText}>No usable items!</Text>
+        ) : (
+          healItems.map(item => (
+            <TouchableOpacity
+              key={item.itemId}
+              style={styles.itemRow}
+              onPress={() => { setPanel('main'); onAction('item', item.itemId); }}
+            >
+              <Text style={styles.itemName}>{item.def.name}</Text>
+              <Text style={styles.itemQty}>x{item.quantity}</Text>
+            </TouchableOpacity>
+          ))
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.overlay}>
       {/* Battle scene area */}
       <View style={styles.sceneArea}>
-        {/* Background gradient effect */}
         <View style={styles.sceneBg} />
         <View style={styles.groundLine} />
 
         {/* Enemy side */}
         <View style={styles.enemySide}>
-          <Text style={styles.enemyName}>{enemy.name}</Text>
+          <View style={styles.enemyNameRow}>
+            <Text style={styles.enemyName}>{enemy.name}</Text>
+            <TypeBadge type={enemy.creatureType} />
+          </View>
           <Text style={styles.enemyLevelText}>Lv.{battle.playerLevel}</Text>
           <HPBar current={battle.enemyHP} max={enemy.hp} width={120} />
           <Text style={styles.hpText}>{battle.enemyHP}/{enemy.hp}</Text>
+          {battle.enemyPoisoned && <Text style={styles.statusText}>PSN</Text>}
           <EnemySprite bodyColor={enemy.bodyColor} headColor={enemy.headColor} shake={enemyShake} />
         </View>
 
@@ -178,6 +315,7 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
             <Text style={styles.playerLevelText}>Lv.{battle.playerLevel}</Text>
             <HPBar current={battle.playerHP} max={battle.playerMaxHP} width={120} />
             <Text style={styles.hpText}>{battle.playerHP}/{battle.playerMaxHP}</Text>
+            {battle.poisoned && <Text style={styles.statusText}>PSN</Text>}
             <Text style={styles.xpText}>XP: {battle.playerXP}/{Math.floor(50 * Math.pow(battle.playerLevel, 1.5))}</Text>
           </View>
         </View>
@@ -190,59 +328,7 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
 
       {/* Action area */}
       <View style={styles.actionArea}>
-        {battle.phase === 'result' ? (
-          <TouchableOpacity style={styles.fullBtn} onPress={onClose}>
-            <Text style={styles.fullBtnText}>
-              {battle.result === 'win' ? 'VICTORY!' : battle.result === 'lose' ? 'CONTINUE...' : 'OK'}
-            </Text>
-          </TouchableOpacity>
-        ) : battle.phase === 'select' && !showItems ? (
-          <View style={styles.actionGrid}>
-            <TouchableOpacity style={[styles.actionBtn, styles.atkBtn]} onPress={() => onAction('attack')}>
-              <Text style={styles.actionBtnText}>ATTACK</Text>
-              <Text style={styles.actionSubText}>ATK:{battle.playerATK}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, styles.defBtn]} onPress={() => onAction('defend')}>
-              <Text style={styles.actionBtnText}>DEFEND</Text>
-              <Text style={styles.actionSubText}>DEF:x2</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, styles.itemBtn]} onPress={() => setShowItems(true)}>
-              <Text style={styles.actionBtnText}>ITEM</Text>
-              <Text style={styles.actionSubText}>{healItems.length} usable</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, styles.runBtn]} onPress={() => onAction('run')}>
-              <Text style={styles.actionBtnText}>RUN</Text>
-              <Text style={styles.actionSubText}>60%</Text>
-            </TouchableOpacity>
-          </View>
-        ) : battle.phase === 'select' && showItems ? (
-          <View style={styles.itemList}>
-            <View style={styles.itemListHeader}>
-              <Text style={styles.itemListTitle}>USE ITEM</Text>
-              <TouchableOpacity onPress={() => setShowItems(false)}>
-                <Text style={styles.itemListBack}>BACK</Text>
-              </TouchableOpacity>
-            </View>
-            {healItems.length === 0 ? (
-              <Text style={styles.noItemsText}>No usable items!</Text>
-            ) : (
-              healItems.map(item => (
-                <TouchableOpacity
-                  key={item.itemId}
-                  style={styles.itemRow}
-                  onPress={() => { setShowItems(false); onAction('item', item.itemId); }}
-                >
-                  <Text style={styles.itemName}>{item.def.name}</Text>
-                  <Text style={styles.itemQty}>x{item.quantity}</Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        ) : (
-          <View style={styles.waitingBox}>
-            <Text style={styles.waitingText}>...</Text>
-          </View>
-        )}
+        {renderActionPanel()}
       </View>
 
       {/* Particle effects */}
@@ -298,6 +384,11 @@ const styles = StyleSheet.create({
     top: 30,
     right: 20,
     alignItems: 'center',
+  },
+  enemyNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   enemyName: {
     color: PALETTE.white,
@@ -419,6 +510,13 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     marginTop: 1,
   },
+  statusText: {
+    color: '#c040c0',
+    fontSize: 9,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    marginTop: 2,
+  },
   hpBarBg: {
     height: 8,
     backgroundColor: '#333',
@@ -430,6 +528,17 @@ const styles = StyleSheet.create({
   hpBarFill: {
     height: '100%',
     borderRadius: 3,
+  },
+  typeBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  typeBadgeText: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
   },
   messageBox: {
     minHeight: 50,
@@ -486,6 +595,77 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontFamily: 'monospace',
     marginTop: 2,
+  },
+  // Move selection panel
+  movePanel: {
+    flex: 1,
+    padding: 4,
+  },
+  movePanelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  movePanelTitle: {
+    color: PALETTE.yellow,
+    fontSize: 13,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  movePanelBack: {
+    color: PALETTE.lightGray,
+    fontSize: 13,
+    fontFamily: 'monospace',
+  },
+  moveGrid: {
+    flex: 1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  moveBtn: {
+    width: '47%',
+    flexGrow: 1,
+    minHeight: 48,
+    backgroundColor: '#1a1a2e',
+    borderWidth: 2,
+    borderRadius: 6,
+    padding: 6,
+    justifyContent: 'center',
+  },
+  moveHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  moveName: {
+    color: PALETTE.white,
+    fontSize: 11,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    flex: 1,
+  },
+  moveTypeBadge: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    marginLeft: 4,
+  },
+  moveTypeText: {
+    color: '#fff',
+    fontSize: 7,
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  },
+  moveStats: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  moveStat: {
+    color: PALETTE.lightGray,
+    fontSize: 9,
+    fontFamily: 'monospace',
   },
   fullBtn: {
     flex: 1,

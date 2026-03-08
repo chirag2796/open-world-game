@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import { View, StyleSheet, StatusBar, Text, TouchableOpacity } from 'react-native';
 import { useGameStore } from '../../core/store/useGameStore';
-import { useShallow } from 'zustand/react/shallow';
 import { GameLoop } from '../../core/systems/GameLoop';
 import { EntityManager } from '../../core/ecs/EntityManager';
 import { MovementSystem } from '../../core/systems/MovementSystem';
@@ -27,6 +26,7 @@ import { useWeather } from '../../engine/useWeather';
 import { Direction, BattleAction } from '../../types';
 import { getRequiredSanad, getRegionName } from '../../data/regions';
 import { startDialog, advanceDialog, DialogSession } from '../../engine/dialogEngine';
+import { pickEnemyMove } from '../../engine/combatEngine';
 import BorderCrossingUI from '../../components/BorderCrossingUI';
 
 const WorldScreen: React.FC = () => {
@@ -59,10 +59,7 @@ const WorldScreen: React.FC = () => {
   const paused = useGameStore(s => s.paused);
   const playerLevel = useGameStore(s => s.playerLevel);
   const playerGold = useGameStore(s => s.playerGold);
-  const playerHP = useGameStore(s => s.playerHP);
-  const playerMaxHP = useGameStore(s => s.playerMaxHP);
-  const playerXP = useGameStore(s => s.playerXP);
-  const battleActive = useGameStore(s => s.battleActive);
+  const battleActive = useGameStore(s => s.battle.active);
   const slots = useGameStore(s => s.slots);
   const equipped = useGameStore(s => s.equipped);
   const weather = useGameStore(s => s.weather);
@@ -101,7 +98,7 @@ const WorldScreen: React.FC = () => {
     // Sync ECS state → Zustand store every tick
     gameLoop.setOnTick(() => {
       const state = store.getState();
-      if (state.paused || state.dialog.active || state.battleActive) return;
+      if (state.paused || state.dialog.active || state.battle.active) return;
 
       const player = entityMgr.getPlayer();
       if (!player) return;
@@ -158,10 +155,13 @@ const WorldScreen: React.FC = () => {
       // Check encounters (skip in dev mode)
       if (!DEV_MODE && consumeEncounter()) {
         const biome = getBiomeAt(tileX, tileY);
-        const equippedStats = store.getState().getEquippedStats();
-        const lvl = store.getState().playerLevel;
+        const s2 = store.getState();
+        const equippedStats = s2.getEquippedStats();
+        const lvl = s2.playerLevel;
+        const atk = 5 + equippedStats.attack + Math.floor(lvl * 1.5);
+        const def = 2 + equippedStats.defense + Math.floor(lvl * 0.5);
         playSFX('battle_start');
-        store.getState().startBattle(biome, lvl, equippedStats.attack, equippedStats.defense);
+        s2.startBattle(biome, lvl, atk, def, s2.playerHP, s2.playerMaxHP, s2.playerXP, s2.playerGold, 10);
       }
     });
 
@@ -344,138 +344,85 @@ const WorldScreen: React.FC = () => {
     }
   }, []);
 
-  const handleBattleAction = useCallback((action: BattleAction, itemId?: string) => {
+  const handleBattleAction = useCallback((action: BattleAction, payload?: string) => {
     const state = store.getState();
-    if (state.battlePhase !== 'select' || !state.enemy) return;
+    if (state.battle.phase !== 'select' || !state.battle.enemy) return;
 
-    if (action === 'attack') playSFX('attack_hit');
-    else if (action === 'defend') playSFX('defend');
-    else if (action === 'run') playSFX('run_away');
-
-    const enemy = state.enemy;
-    const equippedStats = state.getEquippedStats();
-    const atk = 5 + equippedStats.attack + Math.floor(state.playerLevel * 1.5);
-    const def = 2 + equippedStats.defense + Math.floor(state.playerLevel * 0.5);
-
-    if (action === 'run') {
-      const escaped = Math.random() < 0.6;
-      state.setBattleState({
-        battlePhase: escaped ? 'result' : 'animate',
-        battleMessage: escaped ? 'You escaped safely!' : "Couldn't escape!",
-        battleResult: escaped ? 'run' : 'none',
-        isDefending: false,
-        lastAction: 'run',
-      });
-      if (!escaped) setTimeout(() => doEnemyTurn(), 800);
+    if (action === 'move' && payload) {
+      playSFX('attack_hit');
+      state.executePlayerMove(payload);
       return;
     }
 
     if (action === 'defend') {
-      state.setBattleState({
-        battlePhase: 'animate',
-        battleMessage: 'You brace for impact!',
-        isDefending: true,
-        lastAction: 'defend',
-      });
-      setTimeout(() => doEnemyTurn(), 800);
+      playSFX('defend');
+      state.executeDefend();
       return;
     }
 
-    if (action === 'item' && itemId) {
-      const itemDef = ITEMS[itemId];
+    if (action === 'run') {
+      playSFX('run_away');
+      state.executeRun();
+      return;
+    }
+
+    if (action === 'item' && payload) {
+      const itemDef = ITEMS[payload];
       if (!itemDef) return;
-      state.removeItem(itemId, 1);
+      state.removeItem(payload, 1);
       let heal = 0;
       if (itemDef.effect === 'heal_small') heal = 15;
       else if (itemDef.effect === 'heal_medium') heal = 35;
       else if (itemDef.effect === 'heal_full') heal = 999;
+      const newHP = Math.min(state.battle.playerMaxHP, state.battle.playerHP + heal);
       state.healPlayer(heal);
-      state.setBattleState({
-        battlePhase: 'animate',
-        battleMessage: `Used ${itemDef.name}! Restored HP.`,
+      state.setBattle({
+        playerHP: newHP,
+        phase: 'animate',
+        message: `Used ${itemDef.name}! Restored HP.`,
         isDefending: false,
         lastAction: 'item',
       });
-      setTimeout(() => doEnemyTurn(), 1000);
+      // Enemy still gets a turn after item use
+      const enemyMove = pickEnemyMove(state.battle.enemy!.moves);
+      state.setBattle({
+        combatStack: [
+          { type: 'execute_move' as const, actorId: 'enemy', moveId: enemyMove.id, targetId: 'player' },
+          { type: 'end_turn' as const },
+        ],
+      });
+      setTimeout(() => store.getState().processCombatStack(), 800);
       return;
-    }
-
-    // Attack
-    const baseDmg = Math.max(1, atk - enemy.defense);
-    const variance = Math.floor(baseDmg * 0.2);
-    const damage = Math.max(1, baseDmg + Math.floor(Math.random() * variance * 2) - variance);
-    const newEnemyHP = Math.max(0, state.enemyHP - damage);
-
-    if (newEnemyHP <= 0) {
-      const xpGain = enemy.xpReward;
-      const goldGain = enemy.goldReward;
-      const leveledUp = state.addXP(xpGain);
-      state.addGold(goldGain);
-      playSFX('victory');
-      state.setBattleState({
-        enemyHP: 0,
-        battlePhase: 'result',
-        battleMessage: leveledUp
-          ? `${enemy.name} defeated! +${xpGain}XP +${goldGain}G\nLevel Up!`
-          : `${enemy.name} defeated! +${xpGain}XP +${goldGain}G`,
-        battleResult: 'win',
-        lastAction: 'attack',
-      });
-    } else {
-      state.setBattleState({
-        enemyHP: newEnemyHP,
-        battlePhase: 'animate',
-        battleMessage: `You dealt ${damage} damage!`,
-        isDefending: false,
-        lastAction: 'attack',
-      });
-      setTimeout(() => doEnemyTurn(), 800);
-    }
-  }, []);
-
-  const doEnemyTurn = useCallback(() => {
-    const state = store.getState();
-    if (!state.enemy || state.battleResult !== 'none') return;
-
-    const enemy = state.enemy;
-    const equippedStats = state.getEquippedStats();
-    const def = 2 + equippedStats.defense + Math.floor(state.playerLevel * 0.5);
-    const defMultiplier = state.isDefending ? 2 : 1;
-    const baseDmg = Math.max(1, enemy.attack - def * defMultiplier);
-    const variance = Math.floor(baseDmg * 0.2);
-    const damage = Math.max(1, baseDmg + Math.floor(Math.random() * variance * 2) - variance);
-
-    const actualDmg = state.damagePlayer(damage);
-    const newHP = state.playerHP;
-
-    if (newHP <= 0) {
-      state.setBattleState({
-        battlePhase: 'result',
-        battleMessage: `${enemy.name} dealt ${damage} damage!\nYou have been defeated...`,
-        battleResult: 'lose',
-      });
-    } else {
-      state.setBattleState({
-        battlePhase: 'select',
-        battleTurn: 'player',
-        battleMessage: `${enemy.name} dealt ${damage} damage!`,
-        isDefending: false,
-      });
     }
   }, []);
 
   const handleBattleClose = useCallback(() => {
     const state = store.getState();
-    if (state.battleResult === 'win' && Math.random() < 0.3) {
-      state.addItem('healing_herb', 1);
+    const b = state.battle;
+    if (b.result === 'win') {
+      // Award XP and gold
+      const enemy = b.enemy;
+      if (enemy) {
+        state.addXP(enemy.xpReward);
+        state.addGold(enemy.goldReward);
+      }
+      if (Math.random() < 0.3) {
+        state.addItem('healing_herb', 1);
+      }
+      playSFX('victory');
     }
-    if (state.battleResult === 'lose') {
+    if (b.result === 'lose') {
       state.healPlayer(Math.floor(state.playerMaxHP / 2) - state.playerHP);
       state.addGold(-Math.floor(state.playerGold * 0.1));
     }
+    // Sync battle HP back to player store
+    if (b.result !== 'lose') {
+      const hpDiff = b.playerHP - state.playerHP;
+      if (hpDiff < 0) state.damagePlayer(-hpDiff);
+      else if (hpDiff > 0) state.healPlayer(hpDiff);
+    }
     state.endBattle();
     resetEncounterState();
-    playSFX('victory');
   }, []);
 
   const handleUseItem = useCallback((itemId: string) => {
@@ -499,42 +446,13 @@ const WorldScreen: React.FC = () => {
   // Auto-save every 60 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!store.getState().battleActive) saveGame();
+      if (!store.getState().battle.active) saveGame();
     }, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // === BUILD BATTLE STATE for BattleScreen compatibility ===
-  const battleActive_ = useGameStore(s => s.battleActive);
-  const enemy = useGameStore(s => s.enemy);
-  const enemyHP = useGameStore(s => s.enemyHP);
-  const battleTurn = useGameStore(s => s.battleTurn);
-  const battlePhase = useGameStore(s => s.battlePhase);
-  const battleMessage = useGameStore(s => s.battleMessage);
-  const battleResult = useGameStore(s => s.battleResult);
-  const isDefending = useGameStore(s => s.isDefending);
-  const lastAction = useGameStore(s => s.lastAction);
-
-  const equippedStats = useGameStore(useShallow(s => s.getEquippedStats()));
-  const battleState = useMemo(() => ({
-    active: battleActive,
-    enemy,
-    enemyHP,
-    playerHP,
-    playerMaxHP,
-    playerATK: 5 + equippedStats.attack + Math.floor(playerLevel * 1.5),
-    playerDEF: 2 + equippedStats.defense + Math.floor(playerLevel * 0.5),
-    turn: battleTurn,
-    phase: battlePhase,
-    message: battleMessage,
-    result: battleResult,
-    isDefending,
-    playerXP,
-    playerLevel,
-    playerGold,
-    lastAction,
-  }), [battleActive, enemy, enemyHP, playerHP, playerMaxHP, playerLevel, playerGold, playerXP,
-       equippedStats, battleTurn, battlePhase, battleMessage, battleResult, isDefending, lastAction]);
+  // === BATTLE STATE (directly from store) ===
+  const battleState = useGameStore(s => s.battle);
 
   const inventoryState = useMemo(() => ({ slots, equipped }), [slots, equipped]);
 

@@ -9,6 +9,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 15, goldReward: 12,
     biomes: ['desert'],
     bodyColor: '#c09060', headColor: '#805030', description: 'A ruthless bandit of the Thar.',
+    creatureType: 'soldier',
+    moves: ['sword_slash', 'quick_strike', 'war_cry'],
   },
   {
     id: 'sand_scorpion',
@@ -17,6 +19,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 12, goldReward: 5,
     biomes: ['desert'],
     bodyColor: '#a08040', headColor: '#806020', description: 'Venomous creature hiding in the dunes.',
+    creatureType: 'beast',
+    moves: ['claw_rake', 'venom_sting', 'fang_bite'],
   },
   {
     id: 'dust_djinn',
@@ -25,6 +29,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 30, goldReward: 25,
     biomes: ['desert'],
     bodyColor: '#d0a060', headColor: '#e0c080', description: 'A spirit of the sandstorm.',
+    creatureType: 'mythic',
+    moves: ['divine_light', 'mantra_blast', 'astral_strike', 'spirit_heal'],
   },
 
   // Plains enemies
@@ -35,6 +41,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 10, goldReward: 3,
     biomes: ['plains'],
     bodyColor: '#704030', headColor: '#503020', description: 'An aggressive boar charging through the fields.',
+    creatureType: 'beast',
+    moves: ['claw_rake', 'wild_charge', 'howl'],
   },
   {
     id: 'dacoit',
@@ -43,6 +51,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 18, goldReward: 20,
     biomes: ['plains', 'plateau'],
     bodyColor: '#604040', headColor: '#302020', description: 'A highway robber lurking on trade routes.',
+    creatureType: 'soldier',
+    moves: ['sword_slash', 'shield_bash', 'arrow_volley', 'war_cry'],
   },
   {
     id: 'cobra',
@@ -51,6 +61,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 14, goldReward: 4,
     biomes: ['plains', 'wetland', 'forest'],
     bodyColor: '#406020', headColor: '#304010', description: 'A deadly serpent with lightning strikes.',
+    creatureType: 'naga',
+    moves: ['serpent_strike', 'venom_spray', 'constrict'],
   },
 
   // Forest enemies
@@ -61,6 +73,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 13, goldReward: 6,
     biomes: ['forest', 'dense_forest'],
     bodyColor: '#606060', headColor: '#404040', description: 'A cunning predator of the woods.',
+    creatureType: 'beast',
+    moves: ['fang_bite', 'claw_rake', 'howl', 'wild_charge'],
   },
   {
     id: 'jungle_cat',
@@ -69,6 +83,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 16, goldReward: 8,
     biomes: ['dense_forest'],
     bodyColor: '#c09040', headColor: '#a07030', description: 'Sleek and deadly, it strikes from the shadows.',
+    creatureType: 'beast',
+    moves: ['claw_rake', 'fang_bite', 'wild_charge'],
   },
   {
     id: 'tribal_warrior',
@@ -77,6 +93,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 22, goldReward: 15,
     biomes: ['dense_forest', 'forest'],
     bodyColor: '#805030', headColor: '#603820', description: 'A fierce warrior defending tribal lands.',
+    creatureType: 'soldier',
+    moves: ['sword_slash', 'shield_bash', 'war_cry', 'arrow_volley'],
   },
 
   // Mountain enemies
@@ -87,6 +105,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 25, goldReward: 10,
     biomes: ['mountain', 'snow'],
     bodyColor: '#c0c0c0', headColor: '#909090', description: 'Ghost of the Himalayas.',
+    creatureType: 'beast',
+    moves: ['claw_rake', 'fang_bite', 'wild_charge', 'howl'],
   },
   {
     id: 'mountain_yak',
@@ -95,6 +115,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 20, goldReward: 5,
     biomes: ['mountain'],
     bodyColor: '#503020', headColor: '#402010', description: 'A massive beast that charges when threatened.',
+    creatureType: 'beast',
+    moves: ['wild_charge', 'howl', 'claw_rake'],
   },
   {
     id: 'yeti',
@@ -103,6 +125,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 50, goldReward: 40,
     biomes: ['snow'],
     bodyColor: '#d0d0e0', headColor: '#b0b0c0', description: 'A legendary creature of the ice peaks.',
+    creatureType: 'mythic',
+    moves: ['iron_fist', 'boulder_throw', 'stone_wall', 'grind'],
   },
 
   // Coastal/wetland enemies
@@ -113,6 +137,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 20, goldReward: 7,
     biomes: ['wetland', 'coastal'],
     bodyColor: '#506040', headColor: '#384028', description: 'A fearsome crocodile lurking in swamps.',
+    creatureType: 'beast',
+    moves: ['fang_bite', 'constrict', 'wild_charge'],
   },
   {
     id: 'pirate',
@@ -121,6 +147,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 22, goldReward: 30,
     biomes: ['coastal'],
     bodyColor: '#404060', headColor: '#802020', description: 'A pirate from the Arabian Sea.',
+    creatureType: 'soldier',
+    moves: ['sword_slash', 'quick_strike', 'shield_bash', 'arrow_volley'],
   },
 
   // Plateau enemies
@@ -131,6 +159,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 28, goldReward: 18,
     biomes: ['plateau', 'mountain'],
     bodyColor: '#808080', headColor: '#606060', description: 'An ancient stone guardian of the Deccan.',
+    creatureType: 'automaton',
+    moves: ['iron_fist', 'stone_wall', 'boulder_throw', 'grind'],
   },
   {
     id: 'naga_spirit',
@@ -139,6 +169,8 @@ export const ENEMIES: EnemyDef[] = [
     xpReward: 35, goldReward: 25,
     biomes: ['plateau', 'forest'],
     bodyColor: '#4080a0', headColor: '#206080', description: 'A mystical serpent spirit from temple ruins.',
+    creatureType: 'naga',
+    moves: ['serpent_strike', 'mystic_coil', 'venom_spray', 'constrict'],
   },
 ];
 

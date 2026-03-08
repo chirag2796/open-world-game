@@ -42,14 +42,21 @@ export const usePlayerStats = () => useGameStore(useShallow(s => ({
 export const useDialog = () => useGameStore(s => s.dialog);
 
 export const useBattleState = () => useGameStore(useShallow(s => ({
-  active: s.battleActive,
-  enemy: s.enemy,
-  enemyHP: s.enemyHP,
-  phase: s.battlePhase,
-  message: s.battleMessage,
-  result: s.battleResult,
-  isDefending: s.isDefending,
-  lastAction: s.lastAction,
+  active: s.battle.active,
+  enemy: s.battle.enemy,
+  enemyHP: s.battle.enemyHP,
+  playerHP: s.battle.playerHP,
+  playerMaxHP: s.battle.playerMaxHP,
+  phase: s.battle.phase,
+  message: s.battle.message,
+  result: s.battle.result,
+  isDefending: s.battle.isDefending,
+  lastAction: s.battle.lastAction,
+  effectiveness: s.battle.effectiveness,
+  playerMoves: s.battle.playerMoves,
+  combatLog: s.battle.combatLog,
+  poisoned: s.battle.poisoned,
+  enemyPoisoned: s.battle.enemyPoisoned,
 })));
 
 export const useInventoryState = () => useGameStore(useShallow(s => ({
