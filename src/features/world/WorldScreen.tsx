@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import { View, StyleSheet, StatusBar, Text, TouchableOpacity } from 'react-native';
 import { useGameStore } from '../../core/store/useGameStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -11,7 +11,7 @@ import { NPCAISystem } from '../../core/systems/NPCAISystem';
 import { saveGame } from '../../core/persistence/SaveManager';
 import { generateIndiaMap, WORLD_NPCS, PLAYER_START, getStateName, getStateCode, getNearestSettlement, getBiomeAt } from '../../data/india-map';
 import { ITEMS } from '../../data/items';
-import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE } from '../../engine/constants';
+import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE, DEV_MODE, setDevMode } from '../../engine/constants';
 import { useSound } from '../../engine/useSound';
 import TileRenderer from '../../components/TileRenderer';
 import EntityRenderer from '../../components/EntityRenderer';
@@ -30,6 +30,14 @@ import { startDialog, advanceDialog, DialogSession } from '../../engine/dialogEn
 import BorderCrossingUI from '../../components/BorderCrossingUI';
 
 const WorldScreen: React.FC = () => {
+  // === DEV MODE ===
+  const [devModeOn, setDevModeOn] = useState(DEV_MODE);
+  const toggleDevMode = useCallback(() => {
+    const next = !DEV_MODE;
+    setDevMode(next);
+    setDevModeOn(next);
+  }, []);
+
   // === MAP (generated once) ===
   const worldMap = useMemo(() => generateIndiaMap(), []);
 
@@ -130,7 +138,7 @@ const WorldScreen: React.FC = () => {
       const regionCode = getStateCode(tileX, tileY);
       if (regionCode && regionCode !== state.currentRegion) {
         const s = store.getState();
-        if (!s.unlockedRegions.has(regionCode)) {
+        if (!DEV_MODE && !s.unlockedRegions.has(regionCode)) {
           // Blocked — show border crossing UI
           const rName = getRegionName(regionCode);
           s.showBorderCrossing(regionCode, rName);
@@ -141,14 +149,14 @@ const WorldScreen: React.FC = () => {
             player.position.y = state.playerPos.y;
           }
         } else {
-          // Entered new region
+          // Entered new region (or dev mode bypass)
           s.setCurrentRegion(regionCode);
           s.discoverRegion(regionCode);
         }
       }
 
-      // Check encounters
-      if (consumeEncounter()) {
+      // Check encounters (skip in dev mode)
+      if (!DEV_MODE && consumeEncounter()) {
         const biome = getBiomeAt(tileX, tileY);
         const equippedStats = store.getState().getEquippedStats();
         const lvl = store.getState().playerLevel;
@@ -561,6 +569,11 @@ const WorldScreen: React.FC = () => {
             <Text style={styles.levelText}>Lv.{playerLevel}</Text>
             <Text style={styles.goldText}>{playerGold}G</Text>
             <Text style={styles.coordText}>({playerTileX},{playerTileY})</Text>
+            <TouchableOpacity onPress={toggleDevMode} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={[styles.coordText, devModeOn && styles.devModeActive]}>
+                {devModeOn ? 'GOD' : 'DEV'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -657,6 +670,7 @@ const styles = StyleSheet.create({
   levelText: { color: PALETTE.green, fontSize: 11, fontFamily: 'monospace', fontWeight: 'bold' },
   goldText: { color: PALETTE.yellow, fontSize: 11, fontFamily: 'monospace' },
   coordText: { color: PALETTE.midGray, fontSize: 10, fontFamily: 'monospace' },
+  devModeActive: { color: PALETTE.hpRed, fontWeight: 'bold' },
   controlsRow: {
     flex: 1, flexDirection: 'row',
     justifyContent: 'space-between', alignItems: 'center',

@@ -1,6 +1,10 @@
 import { Dimensions } from 'react-native';
 import { TileType } from '../types';
 
+// Dev mode: bypasses solid tile collisions, region locks, encounters
+export let DEV_MODE = false;
+export function setDevMode(on: boolean) { DEV_MODE = on; }
+
 export const TILE_SIZE = 16;
 export const SCALE = 3;
 export const SCALED_TILE = TILE_SIZE * SCALE; // 48px

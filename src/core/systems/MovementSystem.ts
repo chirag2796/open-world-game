@@ -1,6 +1,6 @@
 import { System } from '../ecs/types';
 import { SOLID_TILES } from '../../types';
-import { SCALED_TILE } from '../../engine/constants';
+import { SCALED_TILE, DEV_MODE } from '../../engine/constants';
 
 // Checks if a bounding box at (px, py) with given inset can occupy the tile
 function canMoveTo(
@@ -50,7 +50,12 @@ export const MovementSystem: System = (entities, ctx) => {
   const inset = player.collision.inset;
   let moved = false;
 
-  if (canMoveTo(nx, ny, inset, ctx.map)) {
+  if (DEV_MODE) {
+    // God mode: skip collision, just clamp to map bounds
+    x = Math.max(0, Math.min(nx, (ctx.map.width - 1) * SCALED_TILE));
+    y = Math.max(0, Math.min(ny, (ctx.map.height - 1) * SCALED_TILE));
+    moved = true;
+  } else if (canMoveTo(nx, ny, inset, ctx.map)) {
     x = nx; y = ny; moved = true;
   } else if (nx !== x && canMoveTo(nx, y, inset, ctx.map)) {
     x = nx; moved = true;
