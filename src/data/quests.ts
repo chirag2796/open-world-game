@@ -84,7 +84,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'visit_site',
         description: 'Visit the construction site south of the village',
-        trigger: { type: 'position', tileX: 102, tileY: 78, radius: 3 },
+        trigger: { type: 'position', tileX: 153, tileY: 117, radius: 5 },
         onComplete: {
           setFlags: ['found_dig_site'],
           dialogTreeId: 'quest_discover_talwar',
@@ -124,7 +124,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'return_to_village',
         description: 'Return to the village with the Talwar',
-        trigger: { type: 'position', tileX: 100, tileY: 72, radius: 3 },
+        trigger: { type: 'position', tileX: 150, tileY: 108, radius: 5 },
         onComplete: {
           dialogTreeId: 'quest_talwar_choice',
         },
@@ -199,7 +199,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'reach_delhi',
         description: 'Reach Shahjahanabad (Delhi)',
-        trigger: { type: 'position', tileX: 104, tileY: 56, radius: 5 },
+        trigger: { type: 'position', tileX: 156, tileY: 84, radius: 8 },
         onComplete: {
           setFlags: ['reached_delhi'],
           message: 'You have arrived at the magnificent Shahjahanabad!',
@@ -233,7 +233,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'reach_amber',
         description: 'Reach the city of Amber in Rajasthan',
-        trigger: { type: 'position', tileX: 72, tileY: 88, radius: 5 },
+        trigger: { type: 'position', tileX: 108, tileY: 132, radius: 8 },
         onComplete: {
           setFlags: ['reached_amber'],
           message: 'The fortress city of Amber rises before you.',
@@ -285,7 +285,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'get_fort_key_2',
         description: 'Find the hidden passage map in Mathura ruins',
-        trigger: { type: 'position', tileX: 102, tileY: 78, radius: 2 },
+        trigger: { type: 'position', tileX: 153, tileY: 117, radius: 3 },
         onComplete: {
           giveItems: [{ itemId: 'old_map_fragment', quantity: 1 }],
           setFlags: ['has_passage_map'],
@@ -295,7 +295,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'approach_fort',
         description: 'Approach Agra Fort with both keys',
-        trigger: { type: 'position', tileX: 104, tileY: 76, radius: 3 },
+        trigger: { type: 'position', tileX: 156, tileY: 114, radius: 5 },
         onComplete: {
           setFlags: ['fort_approach'],
           dialogTreeId: 'quest_fort_entry',
@@ -379,7 +379,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'reach_south',
         description: 'Flee south — reach Hampi in Karnataka',
-        trigger: { type: 'position', tileX: 80, tileY: 240, radius: 5 },
+        trigger: { type: 'position', tileX: 120, tileY: 360, radius: 8 },
         onComplete: {
           setFlags: ['reached_hampi'],
           message: 'The ruins of Vijayanagara offer shelter. But at what cost?',
@@ -410,7 +410,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'reach_varanasi',
         description: 'Reach Varanasi for the final confrontation',
-        trigger: { type: 'position', tileX: 144, tileY: 88, radius: 5 },
+        trigger: { type: 'position', tileX: 216, tileY: 132, radius: 8 },
         onComplete: {
           setFlags: ['at_varanasi_final'],
           dialogTreeId: 'quest_final_choice',
@@ -451,7 +451,7 @@ export const MAIN_QUESTS: Record<string, QuestDef> = {
       {
         id: 'return_home',
         description: 'Return to Mathura village',
-        trigger: { type: 'position', tileX: 100, tileY: 72, radius: 4 },
+        trigger: { type: 'position', tileX: 150, tileY: 108, radius: 6 },
         onComplete: {
           setFlags: ['game_complete'],
           dialogTreeId: 'quest_epilogue',

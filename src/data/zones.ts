@@ -32,114 +32,121 @@ export const ROUTES: RouteDef[] = [
     name: 'Yamuna Road',
     description: 'The ancient road following the Yamuna river from Mathura to the capital.',
     waypoints: [
-      { x: 100, y: 72 }, // Mathura
-      { x: 102, y: 68 },
-      { x: 104, y: 64 },
-      { x: 104, y: 60 },
-      { x: 104, y: 56 }, // Delhi
+      { x: 150, y: 108 }, // Mathura
+      { x: 152, y: 104 },
+      { x: 155, y: 100 },
+      { x: 158, y: 96 },
+      { x: 157, y: 92 },
+      { x: 156, y: 88 },
+      { x: 156, y: 84 }, // Delhi
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 1,
     encounterRate: 0.8,
     enemyPool: ['wild_boar', 'cobra', 'thug'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_mathura_agra',
     name: 'Grand Trunk South',
     description: 'The southern stretch of the Grand Trunk Road toward Agra.',
     waypoints: [
-      { x: 100, y: 72 }, // Mathura
-      { x: 104, y: 74 },
-      { x: 108, y: 76 },
-      { x: 116, y: 76 }, // Agra
+      { x: 150, y: 108 }, // Mathura
+      { x: 156, y: 111 },
+      { x: 162, y: 114 },
+      { x: 168, y: 114 },
+      { x: 174, y: 114 }, // Agra
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 2,
     encounterRate: 1.0,
     enemyPool: ['wild_boar', 'dacoit', 'cobra'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_delhi_kurukshetra',
     name: 'Northern Highway',
     description: 'The road north from Delhi through the plains of Haryana.',
     waypoints: [
-      { x: 104, y: 56 }, // Delhi
-      { x: 100, y: 52 },
-      { x: 96, y: 48 },
-      { x: 92, y: 56 },
-      { x: 88, y: 60 }, // Kurukshetra
+      { x: 156, y: 84 }, // Delhi
+      { x: 150, y: 78 },
+      { x: 144, y: 72 },
+      { x: 140, y: 78 },
+      { x: 136, y: 84 },
+      { x: 132, y: 90 }, // Kurukshetra
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 2,
     encounterRate: 0.8,
     enemyPool: ['wild_boar', 'dacoit', 'thug'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
   {
     id: 'route_delhi_panipat',
     name: 'Panipat Trail',
     description: 'A short trail from Delhi to the historic battlefield of Panipat.',
     waypoints: [
-      { x: 104, y: 56 }, // Delhi
-      { x: 100, y: 60 },
-      { x: 96, y: 64 },
-      { x: 88, y: 68 }, // Panipat
+      { x: 156, y: 84 }, // Delhi
+      { x: 150, y: 90 },
+      { x: 144, y: 96 },
+      { x: 138, y: 100 },
+      { x: 132, y: 102 }, // Panipat
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 1,
     encounterRate: 0.6,
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
   {
     id: 'route_agra_lucknow',
     name: 'Awadh Road',
     description: 'The long road east from Agra through the plains of Uttar Pradesh.',
     waypoints: [
-      { x: 116, y: 76 }, // Agra
-      { x: 120, y: 78 },
-      { x: 124, y: 80 },
-      { x: 128, y: 80 }, // Lucknow
+      { x: 174, y: 114 }, // Agra
+      { x: 180, y: 117 },
+      { x: 184, y: 118 },
+      { x: 188, y: 119 },
+      { x: 192, y: 120 }, // Lucknow
     ],
     pathTile: TileType.PATH_STONE,
     suggestedLevel: 3,
     encounterRate: 1.0,
     enemyPool: ['dacoit', 'cobra', 'churel'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_lucknow_varanasi',
     name: 'Ganga Trail',
     description: 'Following the sacred Ganga east toward the holy city.',
     waypoints: [
-      { x: 128, y: 80 }, // Lucknow
-      { x: 132, y: 82 },
-      { x: 136, y: 84 }, // Ayodhya
-      { x: 140, y: 86 },
-      { x: 144, y: 88 }, // Varanasi
+      { x: 192, y: 120 }, // Lucknow
+      { x: 198, y: 123 },
+      { x: 204, y: 126 }, // Ayodhya
+      { x: 208, y: 128 },
+      { x: 212, y: 130 },
+      { x: 216, y: 132 }, // Varanasi
     ],
     pathTile: TileType.PATH_STONE,
     suggestedLevel: 4,
     encounterRate: 1.0,
     enemyPool: ['dacoit', 'cobra', 'naga_spirit', 'churel'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_kurukshetra_amritsar',
     name: 'Punjab Road',
     description: 'The road west through the fertile plains of Punjab.',
     waypoints: [
-      { x: 88, y: 60 }, // Kurukshetra
-      { x: 84, y: 56 },
-      { x: 80, y: 52 },
-      { x: 76, y: 48 }, // Amritsar
+      { x: 132, y: 90 }, // Kurukshetra
+      { x: 126, y: 84 },
+      { x: 120, y: 78 },
+      { x: 114, y: 72 }, // Amritsar
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 3,
     encounterRate: 0.8,
     enemyPool: ['dacoit', 'wild_boar'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
 
   // --- Himalayan Routes ---
@@ -148,34 +155,36 @@ export const ROUTES: RouteDef[] = [
     name: 'Himalayan Ascent',
     description: 'A winding mountain path rising into the Himalayas.',
     waypoints: [
-      { x: 76, y: 48 }, // Amritsar
-      { x: 80, y: 44 },
-      { x: 84, y: 40 },
-      { x: 88, y: 36 },
-      { x: 92, y: 32 }, // Shimla
+      { x: 114, y: 72 }, // Amritsar
+      { x: 118, y: 66 },
+      { x: 124, y: 60 },
+      { x: 130, y: 54 },
+      { x: 134, y: 50 },
+      { x: 138, y: 48 }, // Shimla
     ],
     pathTile: TileType.ROCKY_PATH,
     suggestedLevel: 5,
     encounterRate: 1.2,
     enemyPool: ['snow_leopard', 'mountain_yak', 'garuda'],
-    encounterWidth: 1,
+    encounterWidth: 2,
   },
   {
     id: 'route_shimla_haridwar',
     name: 'Deodar Pass',
     description: 'A mountain trail through ancient deodar forests.',
     waypoints: [
-      { x: 92, y: 32 }, // Shimla
-      { x: 100, y: 32 },
-      { x: 108, y: 36 },
-      { x: 116, y: 38 },
-      { x: 124, y: 40 }, // Haridwar
+      { x: 138, y: 48 }, // Shimla
+      { x: 150, y: 48 },
+      { x: 158, y: 50 },
+      { x: 166, y: 54 },
+      { x: 174, y: 56 },
+      { x: 186, y: 60 }, // Haridwar
     ],
     pathTile: TileType.ROCKY_PATH,
     suggestedLevel: 5,
     encounterRate: 1.0,
     enemyPool: ['snow_leopard', 'mountain_yak', 'forest_wolf'],
-    encounterWidth: 1,
+    encounterWidth: 2,
   },
 
   // --- Rajasthan Routes (Act II, levels 5-8) ---
@@ -184,70 +193,76 @@ export const ROUTES: RouteDef[] = [
     name: 'Rajput Road',
     description: 'The great road southwest into the desert kingdom of Rajputana.',
     waypoints: [
-      { x: 104, y: 56 }, // Delhi
-      { x: 96, y: 60 },
-      { x: 88, y: 68 }, // Panipat
-      { x: 84, y: 72 },
-      { x: 80, y: 80 },
-      { x: 76, y: 84 },
-      { x: 72, y: 88 }, // Amber
+      { x: 156, y: 84 }, // Delhi
+      { x: 148, y: 90 },
+      { x: 140, y: 96 },
+      { x: 132, y: 102 }, // Panipat
+      { x: 126, y: 108 },
+      { x: 120, y: 114 },
+      { x: 114, y: 120 },
+      { x: 110, y: 126 },
+      { x: 108, y: 132 }, // Amber
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 5,
     encounterRate: 1.0,
     enemyPool: ['desert_bandit', 'sand_scorpion', 'dacoit'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_amber_jodhpur',
     name: 'Thar Trail',
     description: 'A desert trail through the heart of the Thar Desert.',
     waypoints: [
-      { x: 72, y: 88 }, // Amber
-      { x: 68, y: 92 },
-      { x: 64, y: 96 },
-      { x: 60, y: 100 },
-      { x: 52, y: 100 }, // Jodhpur
+      { x: 108, y: 132 }, // Amber
+      { x: 102, y: 138 },
+      { x: 96, y: 144 },
+      { x: 90, y: 148 },
+      { x: 84, y: 150 },
+      { x: 78, y: 150 }, // Jodhpur
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 6,
     encounterRate: 1.2,
     enemyPool: ['desert_bandit', 'sand_scorpion', 'dust_djinn'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
   {
     id: 'route_jodhpur_jaisalmer',
     name: 'Desert Passage',
     description: 'Deep into the vast Thar Desert toward the golden city.',
     waypoints: [
-      { x: 52, y: 100 }, // Jodhpur
-      { x: 48, y: 96 },
-      { x: 48, y: 92 },
-      { x: 48, y: 88 },
-      { x: 44, y: 84 }, // Jaisalmer
+      { x: 78, y: 150 }, // Jodhpur
+      { x: 72, y: 144 },
+      { x: 72, y: 138 },
+      { x: 72, y: 132 },
+      { x: 68, y: 128 },
+      { x: 66, y: 126 }, // Jaisalmer
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 7,
     encounterRate: 1.5,
     enemyPool: ['desert_bandit', 'sand_scorpion', 'dust_djinn', 'vetala'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
   {
     id: 'route_amber_udaipur',
     name: 'Aravalli Trail',
     description: 'A scenic route through the Aravalli hills to the lake city.',
     waypoints: [
-      { x: 72, y: 88 }, // Amber
-      { x: 68, y: 96 }, // Pushkar
-      { x: 64, y: 104 },
-      { x: 62, y: 112 },
-      { x: 60, y: 120 }, // Udaipur
+      { x: 108, y: 132 }, // Amber
+      { x: 104, y: 140 },
+      { x: 102, y: 144 }, // Pushkar
+      { x: 98, y: 152 },
+      { x: 96, y: 162 },
+      { x: 93, y: 172 },
+      { x: 90, y: 180 }, // Udaipur
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 6,
     encounterRate: 1.0,
     enemyPool: ['desert_bandit', 'dacoit', 'sand_scorpion'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
 
   // --- Central India / Madhya Pradesh (Act II, levels 6-9) ---
@@ -256,34 +271,37 @@ export const ROUTES: RouteDef[] = [
     name: 'Chambal Valley Road',
     description: 'Through the rugged Chambal badlands, notorious for dacoits.',
     waypoints: [
-      { x: 116, y: 76 }, // Agra
-      { x: 112, y: 80 },
-      { x: 108, y: 84 },
-      { x: 104, y: 88 },
-      { x: 104, y: 92 }, // Gwalior
+      { x: 174, y: 114 }, // Agra
+      { x: 168, y: 120 },
+      { x: 162, y: 126 },
+      { x: 158, y: 132 },
+      { x: 156, y: 135 },
+      { x: 156, y: 138 }, // Gwalior
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 6,
     encounterRate: 1.3,
     enemyPool: ['dacoit', 'tribal_warrior', 'cobra'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_gwalior_bhopal',
     name: 'Vindhya Road',
     description: 'Through the Vindhya range into the forested heart of India.',
     waypoints: [
-      { x: 104, y: 92 }, // Gwalior
-      { x: 100, y: 100 },
-      { x: 96, y: 108 },
-      { x: 96, y: 112 }, // Sanchi
-      { x: 100, y: 116 }, // Bhopal
+      { x: 156, y: 138 }, // Gwalior
+      { x: 150, y: 150 },
+      { x: 146, y: 156 },
+      { x: 144, y: 162 },
+      { x: 144, y: 168 }, // Sanchi
+      { x: 148, y: 172 },
+      { x: 150, y: 174 }, // Bhopal
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 7,
     encounterRate: 1.2,
     enemyPool: ['forest_wolf', 'tribal_warrior', 'naga_spirit', 'nishi'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
 
   // --- Bihar & Bengal (post-Asura, levels 7-10) ---
@@ -292,33 +310,35 @@ export const ROUTES: RouteDef[] = [
     name: 'Magadha Road',
     description: 'The ancient road to Pataliputra, heart of old Magadha.',
     waypoints: [
-      { x: 144, y: 88 }, // Varanasi
-      { x: 148, y: 92 },
-      { x: 152, y: 96 },
-      { x: 156, y: 96 }, // Pataliputra
+      { x: 216, y: 132 }, // Varanasi
+      { x: 222, y: 138 },
+      { x: 228, y: 142 },
+      { x: 232, y: 144 },
+      { x: 234, y: 144 }, // Pataliputra
     ],
     pathTile: TileType.PATH_STONE,
     suggestedLevel: 7,
     encounterRate: 1.0,
     enemyPool: ['dacoit', 'cobra', 'mughal_guard', 'churel'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_pataliputra_gaur',
     name: 'Bengal Road',
     description: 'Eastward through the Gangetic plains to the old capital of Bengal.',
     waypoints: [
-      { x: 156, y: 96 }, // Pataliputra
-      { x: 160, y: 100 },
-      { x: 164, y: 104 },
-      { x: 168, y: 108 },
-      { x: 172, y: 112 }, // Gaur
+      { x: 234, y: 144 }, // Pataliputra
+      { x: 240, y: 150 },
+      { x: 246, y: 156 },
+      { x: 252, y: 162 },
+      { x: 256, y: 166 },
+      { x: 258, y: 168 }, // Gaur
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 8,
     encounterRate: 1.0,
     enemyPool: ['mugger_croc', 'cobra', 'dacoit', 'nishi'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
 
   // --- Gujarat (Act II, levels 6-8) ---
@@ -327,17 +347,18 @@ export const ROUTES: RouteDef[] = [
     name: 'Gujarat Road',
     description: 'Southwest from Udaipur through arid scrubland to Ahmedabad.',
     waypoints: [
-      { x: 60, y: 120 }, // Udaipur
-      { x: 52, y: 128 },
-      { x: 44, y: 136 },
-      { x: 40, y: 144 },
-      { x: 36, y: 148 }, // Ahmedabad
+      { x: 90, y: 180 }, // Udaipur
+      { x: 78, y: 192 },
+      { x: 66, y: 204 },
+      { x: 60, y: 214 },
+      { x: 56, y: 220 },
+      { x: 54, y: 222 }, // Ahmedabad
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 6,
     encounterRate: 1.0,
     enemyPool: ['desert_bandit', 'sand_scorpion', 'dacoit'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
 
   // --- Maharashtra / Deccan (Act II-III, levels 8-11) ---
@@ -346,35 +367,36 @@ export const ROUTES: RouteDef[] = [
     name: 'Deccan Highway',
     description: 'South through the forests of central India to the Deccan plateau.',
     waypoints: [
-      { x: 100, y: 116 }, // Bhopal
-      { x: 96, y: 128 },
-      { x: 88, y: 140 },
-      { x: 84, y: 156 },
-      { x: 80, y: 172 },
-      { x: 76, y: 184 },
-      { x: 76, y: 188 }, // Aurangabad
+      { x: 150, y: 174 }, // Bhopal
+      { x: 144, y: 192 },
+      { x: 138, y: 204 },
+      { x: 132, y: 216 },
+      { x: 126, y: 234 },
+      { x: 120, y: 258 },
+      { x: 116, y: 276 },
+      { x: 114, y: 282 }, // Aurangabad
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 8,
     encounterRate: 1.2,
     enemyPool: ['tribal_warrior', 'forest_wolf', 'rock_golem', 'nishi'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_aurangabad_mumbai',
     name: 'Western Ghat Pass',
     description: 'Down through the Western Ghats to the port city.',
     waypoints: [
-      { x: 76, y: 188 }, // Aurangabad
-      { x: 68, y: 192 },
-      { x: 60, y: 196 },
-      { x: 56, y: 196 }, // Mumbai
+      { x: 114, y: 282 }, // Aurangabad
+      { x: 102, y: 288 },
+      { x: 92, y: 294 },
+      { x: 84, y: 294 }, // Mumbai
     ],
     pathTile: TileType.PATH_STONE,
     suggestedLevel: 9,
     encounterRate: 1.0,
     enemyPool: ['rock_golem', 'pirate', 'dacoit'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
 
   // --- South India (Act III, levels 9-13) ---
@@ -383,84 +405,88 @@ export const ROUTES: RouteDef[] = [
     name: 'Deccan Plateau Road',
     description: 'South through the Deccan plateau from Golconda to the ruins of Hampi.',
     waypoints: [
-      { x: 108, y: 208 }, // Golconda
-      { x: 100, y: 216 },
-      { x: 92, y: 224 },
-      { x: 84, y: 232 },
-      { x: 80, y: 240 }, // Hampi
+      { x: 162, y: 312 }, // Golconda
+      { x: 150, y: 324 },
+      { x: 138, y: 336 },
+      { x: 126, y: 348 },
+      { x: 122, y: 354 },
+      { x: 120, y: 360 }, // Hampi
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 9,
     encounterRate: 1.2,
     enemyPool: ['rock_golem', 'bhoota_sentinel', 'naga_spirit', 'vetala'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_hampi_mysore',
     name: 'Vijayanagara Road',
     description: 'Through the remnants of the great Vijayanagara empire.',
     waypoints: [
-      { x: 80, y: 240 }, // Hampi
-      { x: 82, y: 248 },
-      { x: 84, y: 256 },
-      { x: 84, y: 264 },
-      { x: 84, y: 268 }, // Mysore
+      { x: 120, y: 360 }, // Hampi
+      { x: 122, y: 370 },
+      { x: 124, y: 378 },
+      { x: 126, y: 390 },
+      { x: 126, y: 396 },
+      { x: 126, y: 402 }, // Mysore
     ],
     pathTile: TileType.PATH_STONE,
     suggestedLevel: 10,
     encounterRate: 1.0,
     enemyPool: ['yali', 'bhoota_sentinel', 'naga_spirit'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
   {
     id: 'route_mysore_kozhikode',
     name: 'Malabar Pass',
     description: 'Through the Western Ghats to the spice coast of Kerala.',
     waypoints: [
-      { x: 84, y: 268 }, // Mysore
-      { x: 86, y: 276 },
-      { x: 88, y: 284 },
-      { x: 88, y: 292 }, // Kozhikode
+      { x: 126, y: 402 }, // Mysore
+      { x: 128, y: 410 },
+      { x: 130, y: 420 },
+      { x: 131, y: 430 },
+      { x: 132, y: 438 }, // Kozhikode
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 10,
     encounterRate: 1.0,
     enemyPool: ['jungle_cat', 'forest_wolf', 'makara', 'naga_spirit'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
   {
     id: 'route_kozhikode_kochi',
     name: 'Spice Coast Road',
     description: 'Along the lush Kerala coast, fragrant with spices.',
     waypoints: [
-      { x: 88, y: 292 }, // Kozhikode
-      { x: 88, y: 300 },
-      { x: 88, y: 308 }, // Kochi
+      { x: 132, y: 438 }, // Kozhikode
+      { x: 132, y: 450 },
+      { x: 132, y: 462 }, // Kochi
     ],
     pathTile: TileType.PATH_STONE,
     suggestedLevel: 10,
     encounterRate: 0.6,
     enemyPool: ['pirate', 'makara'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
   {
     id: 'route_hampi_madurai',
     name: 'Tamil Road',
     description: 'The long road south through the Tamil plains.',
     waypoints: [
-      { x: 80, y: 240 }, // Hampi
-      { x: 88, y: 248 },
-      { x: 96, y: 256 },
-      { x: 104, y: 268 },
-      { x: 108, y: 280 },
-      { x: 112, y: 292 },
-      { x: 112, y: 300 }, // Madurai
+      { x: 120, y: 360 }, // Hampi
+      { x: 132, y: 372 },
+      { x: 142, y: 382 },
+      { x: 152, y: 396 },
+      { x: 158, y: 408 },
+      { x: 162, y: 420 },
+      { x: 166, y: 438 },
+      { x: 168, y: 450 }, // Madurai
     ],
     pathTile: TileType.PATH_STONE,
     suggestedLevel: 11,
     encounterRate: 1.0,
     enemyPool: ['yali', 'naga_spirit', 'bhoota_sentinel'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
 
   // --- Northeast (Act III, levels 10-13) ---
@@ -469,17 +495,18 @@ export const ROUTES: RouteDef[] = [
     name: 'Northeast Passage',
     description: 'Through the narrow corridor to the hills of the northeast.',
     waypoints: [
-      { x: 156, y: 96 }, // Pataliputra
-      { x: 168, y: 100 },
-      { x: 180, y: 104 },
-      { x: 196, y: 108 },
-      { x: 212, y: 112 }, // Guwahati
+      { x: 234, y: 144 }, // Pataliputra
+      { x: 252, y: 150 },
+      { x: 270, y: 156 },
+      { x: 288, y: 160 },
+      { x: 300, y: 164 },
+      { x: 318, y: 168 }, // Guwahati
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 10,
     encounterRate: 1.3,
     enemyPool: ['mugger_croc', 'jungle_cat', 'pishacha', 'nishi'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
 
   // --- Odisha coastal route ---
@@ -488,18 +515,19 @@ export const ROUTES: RouteDef[] = [
     name: 'Eastern Coast Road',
     description: 'South along the Bay of Bengal coast.',
     waypoints: [
-      { x: 172, y: 112 }, // Gaur
-      { x: 172, y: 120 }, // Murshidabad
-      { x: 172, y: 132 },
-      { x: 174, y: 144 },
-      { x: 172, y: 152 }, // Bhubaneswar
-      { x: 176, y: 160 }, // Puri
+      { x: 258, y: 168 }, // Gaur
+      { x: 258, y: 180 }, // Murshidabad
+      { x: 258, y: 192 },
+      { x: 260, y: 204 },
+      { x: 260, y: 216 },
+      { x: 258, y: 228 }, // Bhubaneswar
+      { x: 264, y: 240 }, // Puri
     ],
     pathTile: TileType.PATH_DIRT,
     suggestedLevel: 8,
     encounterRate: 1.0,
     enemyPool: ['pirate', 'mugger_croc', 'makara'],
-    encounterWidth: 2,
+    encounterWidth: 3,
   },
 
   // --- Telangana / Andhra ---
@@ -508,17 +536,18 @@ export const ROUTES: RouteDef[] = [
     name: 'Golconda Road',
     description: 'East through the Deccan to the diamond city.',
     waypoints: [
-      { x: 76, y: 188 }, // Aurangabad
-      { x: 84, y: 196 },
-      { x: 92, y: 200 },
-      { x: 100, y: 204 },
-      { x: 108, y: 208 }, // Golconda
+      { x: 114, y: 282 }, // Aurangabad
+      { x: 126, y: 294 },
+      { x: 138, y: 300 },
+      { x: 150, y: 306 },
+      { x: 158, y: 310 },
+      { x: 162, y: 312 }, // Golconda
     ],
     pathTile: TileType.PATH_STONE,
     suggestedLevel: 9,
     encounterRate: 1.0,
     enemyPool: ['rock_golem', 'bhoota_sentinel', 'dacoit'],
-    encounterWidth: 3,
+    encounterWidth: 4,
   },
 ];
 
@@ -544,8 +573,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'mathura_training',
     name: 'Training Grounds',
-    center: { x: 102, y: 78 },
-    radius: 5,
+    center: { x: 153, y: 117 },
+    radius: 8,
     type: 'training_ground',
     suggestedLevel: 1,
     encounterRate: 1.5,
@@ -555,8 +584,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'yamuna_grove',
     name: 'Yamuna Sacred Grove',
-    center: { x: 108, y: 68 },
-    radius: 4,
+    center: { x: 162, y: 102 },
+    radius: 6,
     type: 'sacred_grove',
     suggestedLevel: 2,
     encounterRate: 0.5,
@@ -567,8 +596,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'thar_oasis',
     name: 'Desert Oasis',
-    center: { x: 48, y: 92 },
-    radius: 5,
+    center: { x: 72, y: 138 },
+    radius: 8,
     type: 'oasis',
     suggestedLevel: 6,
     encounterRate: 0.3,
@@ -577,8 +606,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'chambal_bandit_camp',
     name: 'Chambal Ravines',
-    center: { x: 108, y: 84 },
-    radius: 6,
+    center: { x: 162, y: 126 },
+    radius: 9,
     type: 'bandit_camp',
     suggestedLevel: 6,
     encounterRate: 2.0,
@@ -590,8 +619,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'himalayan_hot_springs',
     name: 'Mountain Hot Springs',
-    center: { x: 120, y: 32 },
-    radius: 4,
+    center: { x: 180, y: 48 },
+    radius: 6,
     type: 'hot_springs',
     suggestedLevel: 5,
     encounterRate: 0.2,
@@ -602,8 +631,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'sanchi_sacred',
     name: 'Sanchi Monastery Grounds',
-    center: { x: 96, y: 112 },
-    radius: 5,
+    center: { x: 144, y: 168 },
+    radius: 8,
     type: 'sacred_grove',
     suggestedLevel: 7,
     encounterRate: 0.3,
@@ -612,8 +641,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'bastar_tribal',
     name: 'Bastar Tribal Lands',
-    center: { x: 132, y: 156 },
-    radius: 8,
+    center: { x: 198, y: 234 },
+    radius: 12,
     type: 'ancient_ruins',
     suggestedLevel: 8,
     encounterRate: 1.8,
@@ -625,8 +654,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'hampi_ruins_zone',
     name: 'Vijayanagara Ruins',
-    center: { x: 82, y: 242 },
-    radius: 8,
+    center: { x: 123, y: 363 },
+    radius: 12,
     type: 'ancient_ruins',
     suggestedLevel: 9,
     encounterRate: 1.5,
@@ -636,8 +665,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'rameswaram_sacred',
     name: 'Rameswaram Shore',
-    center: { x: 116, y: 308 },
-    radius: 5,
+    center: { x: 174, y: 462 },
+    radius: 8,
     type: 'sacred_grove',
     suggestedLevel: 11,
     encounterRate: 0.4,
@@ -649,8 +678,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'sundarbans_haunted',
     name: 'Sundarban Mangroves',
-    center: { x: 176, y: 130 },
-    radius: 6,
+    center: { x: 264, y: 195 },
+    radius: 9,
     type: 'haunted_grounds',
     suggestedLevel: 9,
     encounterRate: 2.0,
@@ -660,8 +689,8 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'tawang_monastery',
     name: 'Tawang Monastery Grounds',
-    center: { x: 252, y: 108 },
-    radius: 4,
+    center: { x: 378, y: 162 },
+    radius: 6,
     type: 'sacred_grove',
     suggestedLevel: 11,
     encounterRate: 0.2,
@@ -672,13 +701,59 @@ export const SUB_ZONES: SubZoneDef[] = [
   {
     id: 'golconda_mines',
     name: 'Golconda Diamond Mines',
-    center: { x: 112, y: 212 },
-    radius: 5,
+    center: { x: 168, y: 318 },
+    radius: 8,
     type: 'ancient_ruins',
     suggestedLevel: 9,
     encounterRate: 1.5,
     enemyPool: ['bhoota_sentinel', 'rock_golem', 'vetala'],
     description: 'The famous diamond mines, now infested with ancient guardians.',
+  },
+
+  // --- New Wilderness Sub-Zones ---
+  {
+    id: 'vindhya_wilds',
+    name: 'Vindhya Wilderness',
+    center: { x: 150, y: 156 },
+    radius: 10,
+    type: 'bandit_camp',
+    suggestedLevel: 6,
+    encounterRate: 1.5,
+    enemyPool: ['forest_wolf', 'tribal_warrior', 'cobra'],
+    description: 'Dense forests of the Vindhya range, home to wolves and tribal warriors.',
+  },
+  {
+    id: 'thar_deep_desert',
+    name: 'Deep Thar Wastes',
+    center: { x: 72, y: 150 },
+    radius: 10,
+    type: 'ancient_ruins',
+    suggestedLevel: 7,
+    encounterRate: 1.8,
+    enemyPool: ['dust_djinn', 'sand_scorpion', 'desert_bandit'],
+    description: 'The scorching heart of the Thar Desert. Few survive the crossing.',
+  },
+  {
+    id: 'gangetic_wilds',
+    name: 'Gangetic Wilderness',
+    center: { x: 186, y: 114 },
+    radius: 8,
+    type: 'training_ground',
+    suggestedLevel: 3,
+    encounterRate: 1.3,
+    enemyPool: ['wild_boar', 'cobra', 'dacoit'],
+    description: 'Wild grasslands along the Gangetic plain, teeming with creatures.',
+  },
+  {
+    id: 'western_ghats_pass',
+    name: 'Western Ghats Passage',
+    center: { x: 108, y: 312 },
+    radius: 10,
+    type: 'mountain_pass',
+    suggestedLevel: 8,
+    encounterRate: 1.5,
+    enemyPool: ['rock_golem', 'forest_wolf', 'tribal_warrior'],
+    description: 'Treacherous mountain passes through the Western Ghats.',
   },
 ];
 
@@ -690,7 +765,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_forest_mp',
     type: 'cuttable_tree',
-    tileX: 94, tileY: 108,
+    tileX: 141, tileY: 162,
     width: 3, height: 1,
     requiredItem: 'clearing_axe',
     tileType: TileType.FALLEN_LOG,
@@ -700,7 +775,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_forest_jharkhand',
     type: 'cuttable_tree',
-    tileX: 150, tileY: 120,
+    tileX: 225, tileY: 180,
     width: 3, height: 1,
     requiredItem: 'clearing_axe',
     tileType: TileType.FALLEN_LOG,
@@ -710,7 +785,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_forest_ne',
     type: 'cuttable_tree',
-    tileX: 220, tileY: 100,
+    tileX: 330, tileY: 150,
     width: 3, height: 1,
     requiredItem: 'clearing_axe',
     tileType: TileType.FALLEN_LOG,
@@ -722,7 +797,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_rocks_himalaya',
     type: 'breakable_rock',
-    tileX: 96, tileY: 28,
+    tileX: 144, tileY: 42,
     width: 2, height: 2,
     requiredItem: 'iron_pickaxe',
     tileType: TileType.BOULDER,
@@ -732,7 +807,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_rocks_deccan',
     type: 'breakable_rock',
-    tileX: 88, tileY: 228,
+    tileX: 132, tileY: 342,
     width: 2, height: 2,
     requiredItem: 'iron_pickaxe',
     tileType: TileType.BOULDER,
@@ -744,7 +819,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_flood_bengal',
     type: 'flooded_path',
-    tileX: 174, tileY: 126,
+    tileX: 261, tileY: 189,
     width: 4, height: 2,
     requiredItem: 'boat_token',
     tileType: TileType.SHALLOW_WATER,
@@ -754,7 +829,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_flood_sundarbans',
     type: 'flooded_path',
-    tileX: 174, tileY: 130,
+    tileX: 261, tileY: 195,
     width: 3, height: 2,
     requiredItem: 'boat_token',
     tileType: TileType.SHALLOW_WATER,
@@ -766,7 +841,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_cliff_amber',
     type: 'cliff_climb',
-    tileX: 72, tileY: 86,
+    tileX: 108, tileY: 129,
     width: 2, height: 1,
     requiredItem: 'climbing_rope',
     tileType: TileType.CLIFF,
@@ -776,7 +851,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_cliff_ghats',
     type: 'cliff_climb',
-    tileX: 64, tileY: 252,
+    tileX: 96, tileY: 378,
     width: 2, height: 1,
     requiredItem: 'climbing_rope',
     tileType: TileType.CLIFF,
@@ -788,7 +863,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_guard_agra_fort',
     type: 'guard_block',
-    tileX: 114, tileY: 76,
+    tileX: 171, tileY: 114,
     width: 2, height: 1,
     requiredFlag: 'has_fort_seal',
     tileType: TileType.LOCKED_GATE,
@@ -798,7 +873,7 @@ export const OBSTACLES: ObstacleDef[] = [
   {
     id: 'obstacle_guard_golconda',
     type: 'guard_block',
-    tileX: 108, tileY: 210,
+    tileX: 162, tileY: 315,
     width: 2, height: 1,
     requiredFlag: 'ordeal_complete',
     tileType: TileType.LOCKED_GATE,
