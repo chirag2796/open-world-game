@@ -9,7 +9,7 @@ import { CreatureType } from '../types';
 // Row 0 cols 0-7: idle (8 frames), Row 0 cols 8-15: walk, etc.
 // For battle we only need idle animation: row 0, cols 0-7
 const PUNY_PLAYER = {
-  source: require('../../assets/sprites/puny-characters/Warrior-Blue.png') as ImageSourcePropType,
+  source: require('../../assets/sprites/puny-characters/Character-Base.png') as ImageSourcePropType,
   sheetWidth: 768,
   sheetHeight: 256,
   frameSize: 32,

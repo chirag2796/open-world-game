@@ -13,6 +13,7 @@ import { ITEMS } from '../../data/items';
 import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE, DEV_MODE, setDevMode } from '../../engine/constants';
 import { useSound } from '../../engine/useSound';
 import TileRenderer from '../../components/TileRenderer';
+import DecorationRenderer from '../../components/DecorationRenderer';
 import EntityRenderer from '../../components/EntityRenderer';
 import DPad from '../../components/DPad';
 import ActionButton from '../../components/ActionButton';
@@ -554,6 +555,7 @@ const WorldScreen: React.FC = () => {
 
       <View style={styles.gameArea}>
         <TileRenderer map={worldMap} cameraX={camX} cameraY={camY} />
+        <DecorationRenderer map={worldMap} cameraX={camX} cameraY={camY} />
         <EntityRenderer
           npcData={npcRenderData}
           playerPos={playerPos}

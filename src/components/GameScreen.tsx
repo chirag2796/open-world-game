@@ -9,6 +9,7 @@ import { useSound } from '../engine/useSound';
 import { useWeather } from '../engine/useWeather';
 import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE } from '../engine/constants';
 import TileRenderer from './TileRenderer';
+import DecorationRenderer from './DecorationRenderer';
 import EntityRenderer from './EntityRenderer';
 import DPad from './DPad';
 import ActionButton from './ActionButton';
@@ -109,6 +110,11 @@ const GameScreen: React.FC = () => {
 
       <View style={styles.gameArea}>
         <TileRenderer
+          map={worldMap}
+          cameraX={gameState.cameraX}
+          cameraY={gameState.cameraY}
+        />
+        <DecorationRenderer
           map={worldMap}
           cameraX={gameState.cameraX}
           cameraY={gameState.cameraY}

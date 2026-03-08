@@ -133,9 +133,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: BTN_SIZE,
     height: BTN_SIZE,
-    backgroundColor: PALETTE.darkGray,
+    backgroundColor: '#2a2a3a',
     borderWidth: 2,
-    borderColor: PALETTE.midGray,
+    borderColor: '#4a4a5a',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -169,9 +169,9 @@ const styles = StyleSheet.create({
     top: BTN_SIZE,
     width: BTN_SIZE,
     height: BTN_SIZE,
-    backgroundColor: PALETTE.darkGray,
+    backgroundColor: '#222230',
     borderWidth: 1,
-    borderColor: PALETTE.midGray,
+    borderColor: '#3a3a4a',
   },
   arrowHead: {
     width: 0,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 14,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderBottomColor: PALETTE.lightGray,
+    borderBottomColor: '#b0b0c0',
   },
 });
 

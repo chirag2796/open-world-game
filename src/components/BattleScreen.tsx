@@ -294,6 +294,13 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
         <View style={styles.sceneGradient} />
         <View style={styles.groundLine} />
 
+        {/* Ground texture dots for visual richness */}
+        <View style={styles.groundDots}>
+          {[0.1, 0.25, 0.4, 0.55, 0.7, 0.85].map((pct, i) => (
+            <View key={i} style={[styles.groundDot, { left: `${pct * 100}%`, top: `${20 + (i % 3) * 25}%` }]} />
+          ))}
+        </View>
+
         {/* Enemy side */}
         <View style={styles.enemySide}>
           <View style={styles.enemyNameRow}>
@@ -304,11 +311,15 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
           <HPBar current={battle.enemyHP} max={enemy.hp} width={120} />
           <Text style={styles.hpText}>{battle.enemyHP}/{enemy.hp}</Text>
           {battle.enemyPoisoned && <Text style={styles.statusText}>PSN</Text>}
+          {/* Shadow under enemy */}
+          <View style={styles.enemyShadow} />
           <BattleEnemySprite enemyId={enemy.id} size={80} shake={enemyShake} isDead={battle.phase === 'result' && battle.result === 'win'} />
         </View>
 
         {/* Player side */}
         <View style={styles.playerSide}>
+          {/* Shadow under player */}
+          <View style={styles.playerShadow} />
           <BattlePlayerSprite size={72} flash={playerFlash} isDead={battle.phase === 'result' && battle.result === 'lose'} />
           <View style={styles.playerInfo}>
             <Text style={styles.playerName}>You</Text>
@@ -391,6 +402,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a2a1a',
     borderTopWidth: 3,
     borderTopColor: '#3a5a3a',
+  },
+  groundDots: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0, top: '60%',
+    zIndex: 1,
+  },
+  groundDot: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+    backgroundColor: '#2a3a2a',
+    borderRadius: 2,
+  },
+  enemyShadow: {
+    width: 70,
+    height: 12,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: 35,
+    marginTop: 4,
+    alignSelf: 'center',
+  },
+  playerShadow: {
+    position: 'absolute',
+    bottom: -6,
+    left: 6,
+    width: 60,
+    height: 10,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: 30,
   },
   enemySide: {
     position: 'absolute',

@@ -27,6 +27,7 @@ const DIR_COL_OFFSET: Record<Direction, number> = {
 // ─── Character Sheet Definitions ─────────────────────────────
 
 const SHEETS = {
+  'character-base':    require('../../assets/sprites/puny-characters/Character-Base.png'),
   'warrior-blue':      require('../../assets/sprites/puny-characters/Warrior-Blue.png'),
   'warrior-red':       require('../../assets/sprites/puny-characters/Warrior-Red.png'),
   'soldier-blue':      require('../../assets/sprites/puny-characters/Soldier-Blue.png'),
@@ -43,23 +44,26 @@ const SHEETS = {
 } as Record<string, ImageSourcePropType>;
 
 // Map NPC IDs to Puny Characters sprite sheets
+// Use diverse sheets: Workers for merchants/farmers, Mages for scholars/priests,
+// Character-Base for advisors/commoners, Soldiers for guards
 const NPC_SHEET_MAP: Record<string, string> = {
-  'delhi-advisor':     'mage-red',
-  'delhi-merchant':    'human-worker-red',
-  'agra-merchant':     'human-worker-cyan',
-  'jaipur-guard':      'soldier-yellow',
-  'varanasi-scholar':  'mage-cyan',
-  'lucknow-poet':      'archer-purple',
-  'guwahati-sage':     'archer-green',
-  'hampi-priest':      'mage-red',
-  'kozhikode-trader':  'human-soldier-cyan',
-  'mumbai-captain':    'soldier-blue',
-  'madurai-priestess': 'mage-cyan',
-  'jodhpur-warrior':   'warrior-red',
-  'bhopal-alchemist':  'human-worker-cyan',
+  'delhi-advisor':     'character-base',       // friendly advisor, civilian look
+  'delhi-merchant':    'human-worker-red',     // merchant in work clothes
+  'agra-merchant':     'human-worker-cyan',    // merchant variant
+  'jaipur-guard':      'soldier-yellow',       // armored guard
+  'varanasi-scholar':  'mage-cyan',            // robed scholar
+  'lucknow-poet':      'character-base',       // poet, civilian look
+  'guwahati-sage':     'mage-red',             // wise sage in robes
+  'hampi-priest':      'mage-red',             // temple priest in robes
+  'kozhikode-trader':  'human-worker-cyan',    // trader in work clothes
+  'mumbai-captain':    'human-soldier-cyan',   // naval captain
+  'madurai-priestess': 'mage-cyan',            // priestess in robes
+  'jodhpur-warrior':   'warrior-red',          // actual warrior
+  'bhopal-alchemist':  'mage-cyan',            // alchemist in robes
 };
 
-const PLAYER_SHEET = 'warrior-blue';
+// Player uses Character-Base — friendly, civilian human (not armored warrior)
+const PLAYER_SHEET = 'character-base';
 
 function getSheet(entityId: string): ImageSourcePropType {
   const key = entityId === 'player' ? PLAYER_SHEET : (NPC_SHEET_MAP[entityId] || 'soldier-blue');
@@ -67,6 +71,19 @@ function getSheet(entityId: string): ImageSourcePropType {
 }
 
 // ─── Animated Puny Character ─────────────────────────────────
+
+// Character shadow ellipse rendered under each sprite
+const CharShadow: React.FC<{ size: number }> = memo(({ size }) => (
+  <View style={{
+    position: 'absolute',
+    bottom: -2,
+    left: size * 0.15,
+    width: size * 0.7,
+    height: size * 0.2,
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    borderRadius: size,
+  }} />
+));
 
 const PunySprite: React.FC<{
   sheetSource: ImageSourcePropType;
@@ -86,23 +103,26 @@ const PunySprite: React.FC<{
   const scale = size / PUNY_FRAME_SIZE;
 
   return (
-    <View style={{
-      width: size,
-      height: size,
-      overflow: 'hidden',
-      transform: flipX ? [{ scaleX: -1 }] : [],
-    }}>
-      <Image
-        source={sheetSource}
-        style={{
-          position: 'absolute',
-          width: PUNY_SHEET_W * scale,
-          height: PUNY_SHEET_H * scale,
-          left: -srcX * scale,
-          top: -srcY * scale,
-        }}
-        resizeMode="stretch"
-      />
+    <View style={{ width: size, height: size }}>
+      <CharShadow size={size} />
+      <View style={{
+        width: size,
+        height: size,
+        overflow: 'hidden',
+        transform: flipX ? [{ scaleX: -1 }] : [],
+      }}>
+        <Image
+          source={sheetSource}
+          style={{
+            position: 'absolute',
+            width: PUNY_SHEET_W * scale,
+            height: PUNY_SHEET_H * scale,
+            left: -srcX * scale,
+            top: -srcY * scale,
+          }}
+          resizeMode="stretch"
+        />
+      </View>
     </View>
   );
 });
