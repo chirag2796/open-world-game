@@ -9,7 +9,7 @@ import { CameraSystem, cameraX, cameraY, initCamera } from '../../core/systems/C
 import { EncounterSystem, consumeEncounter, resetEncounterState } from '../../core/systems/EncounterSystem';
 import { NPCAISystem } from '../../core/systems/NPCAISystem';
 import { saveGame } from '../../core/persistence/SaveManager';
-import { generateIndiaMap, WORLD_NPCS, PLAYER_START, getStateName, getNearestSettlement, getBiomeAt } from '../../data/india-map';
+import { generateIndiaMap, WORLD_NPCS, PLAYER_START, getStateName, getStateCode, getNearestSettlement, getBiomeAt } from '../../data/india-map';
 import { ITEMS } from '../../data/items';
 import { PALETTE, GAME_AREA_HEIGHT, CONTROLS_HEIGHT, SCREEN_WIDTH, SCALED_TILE } from '../../engine/constants';
 import { useSound } from '../../engine/useSound';
@@ -26,6 +26,8 @@ import DayNightCycle from '../../components/DayNightCycle';
 import { useWeather } from '../../engine/useWeather';
 import { Direction, NPC, BattleAction } from '../../types';
 import { getRandomEnemy, xpForLevel } from '../../data/enemies';
+import { getRequiredSanad, getRegionName } from '../../data/regions';
+import BorderCrossingUI from '../../components/BorderCrossingUI';
 
 const WorldScreen: React.FC = () => {
   // === MAP (generated once) ===
@@ -55,6 +57,8 @@ const WorldScreen: React.FC = () => {
   const slots = useGameStore(s => s.slots);
   const equipped = useGameStore(s => s.equipped);
   const weather = useGameStore(s => s.weather);
+  const borderCrossing = useGameStore(s => s.borderCrossing);
+  const currentRegion = useGameStore(s => s.currentRegion);
 
   // Store actions (stable refs via zustand)
   const store = useGameStore;
@@ -118,10 +122,31 @@ const WorldScreen: React.FC = () => {
         store.setState(updates);
       }
 
+      // Check region crossing
+      const tileX = Math.floor(px / SCALED_TILE);
+      const tileY = Math.floor(py / SCALED_TILE);
+      const regionCode = getStateCode(tileX, tileY);
+      if (regionCode && regionCode !== state.currentRegion) {
+        const s = store.getState();
+        if (!s.unlockedRegions.has(regionCode)) {
+          // Blocked — show border crossing UI
+          const rName = getRegionName(regionCode);
+          s.showBorderCrossing(regionCode, rName);
+          // Push player back
+          const player = entityMgr.getPlayer();
+          if (player) {
+            player.position.x = state.playerPos.x;
+            player.position.y = state.playerPos.y;
+          }
+        } else {
+          // Entered new region
+          s.setCurrentRegion(regionCode);
+          s.discoverRegion(regionCode);
+        }
+      }
+
       // Check encounters
       if (consumeEncounter()) {
-        const tileX = Math.floor(px / SCALED_TILE);
-        const tileY = Math.floor(py / SCALED_TILE);
         const biome = getBiomeAt(tileX, tileY);
         const equippedStats = store.getState().getEquippedStats();
         const lvl = store.getState().playerLevel;
@@ -348,6 +373,19 @@ const WorldScreen: React.FC = () => {
     playSFX('item_use');
   }, []);
 
+  const handleBorderDismiss = useCallback(() => {
+    store.getState().dismissBorderCrossing();
+  }, []);
+
+  const handleBorderEnter = useCallback(() => {
+    const state = store.getState();
+    if (!state.borderCrossing) return;
+    const code = state.borderCrossing.regionCode;
+    state.setCurrentRegion(code);
+    state.discoverRegion(code);
+    state.dismissBorderCrossing();
+  }, []);
+
   // Auto-save every 60 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -465,6 +503,16 @@ const WorldScreen: React.FC = () => {
           inventory={inventoryState}
           onAction={handleBattleAction}
           onClose={handleBattleClose}
+        />
+      )}
+
+      {borderCrossing?.active && (
+        <BorderCrossingUI
+          regionName={borderCrossing.regionName}
+          isLocked={!store.getState().unlockedRegions.has(borderCrossing.regionCode)}
+          requiredItem={getRequiredSanad(borderCrossing.regionCode)}
+          onDismiss={handleBorderDismiss}
+          onEnter={handleBorderEnter}
         />
       )}
     </View>

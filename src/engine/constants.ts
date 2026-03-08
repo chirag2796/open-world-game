@@ -64,6 +64,24 @@ export const TILE_COLORS: Record<TileType, string> = {
   [TileType.CAMPSITE]: '#c4a46c',
   [TileType.HUT]: '#9b7348',
   [TileType.LAKE]: '#3880c0',
+  // Indo-Saracenic architecture
+  [TileType.SANDSTONE]: '#c2613a',
+  [TileType.MARBLE]: '#f0ece0',
+  [TileType.DOME]: '#e8d8a0',
+  [TileType.ARCH]: '#b85030',
+  [TileType.JALI]: '#d8c8a8',
+  [TileType.MINARET]: '#c8b888',
+  [TileType.CHHATRI]: '#d0b870',
+  [TileType.BAORI_WALL]: '#a06030',
+  [TileType.BAORI_WATER]: '#2868a0',
+  [TileType.PIETRA_DURA]: '#d0c0a0',
+  [TileType.COURTYARD]: '#d8c8a0',
+  [TileType.HAVELI_WALL]: '#b06838',
+  [TileType.MUGHAL_GATE]: '#a04828',
+  [TileType.MOSQUE]: '#d8d0b8',
+  [TileType.BORDER_POST]: '#8a6840',
+  [TileType.CANAL]: '#5098c0',
+  [TileType.CHARBAGH]: '#308838',
 };
 
 // Detail overlays per tile type
@@ -105,6 +123,24 @@ export const TILE_DETAIL: Partial<Record<TileType, { color: string; type: 'dots'
   [TileType.CAMPSITE]: { color: '#e08030', type: 'center' },
   [TileType.HUT]: { color: '#7a5530', type: 'border' },
   [TileType.LAKE]: { color: '#2868a0', type: 'dots' },
+  // Indo-Saracenic
+  [TileType.SANDSTONE]: { color: '#a84828', type: 'stripe' },
+  [TileType.MARBLE]: { color: '#e0d8c8', type: 'border' },
+  [TileType.DOME]: { color: '#c8b870', type: 'center' },
+  [TileType.ARCH]: { color: '#902818', type: 'border' },
+  [TileType.JALI]: { color: '#c0b090', type: 'cross' },
+  [TileType.MINARET]: { color: '#b0a070', type: 'stripe' },
+  [TileType.CHHATRI]: { color: '#c0a850', type: 'center' },
+  [TileType.BAORI_WALL]: { color: '#884820', type: 'stripe' },
+  [TileType.BAORI_WATER]: { color: '#1858a0', type: 'dots' },
+  [TileType.PIETRA_DURA]: { color: '#40a060', type: 'dots' },
+  [TileType.COURTYARD]: { color: '#c0b080', type: 'dots' },
+  [TileType.HAVELI_WALL]: { color: '#985830', type: 'stripe' },
+  [TileType.MUGHAL_GATE]: { color: '#802010', type: 'border' },
+  [TileType.MOSQUE]: { color: '#c8c0a8', type: 'center' },
+  [TileType.BORDER_POST]: { color: '#705028', type: 'border' },
+  [TileType.CANAL]: { color: '#3878a0', type: 'stripe' },
+  [TileType.CHARBAGH]: { color: '#207028', type: 'cross' },
 };
 
 export const PALETTE = {
@@ -133,4 +169,14 @@ export const PALETTE = {
   hpGreen: '#40c040',
   hpYellow: '#e0c020',
   hpRed: '#c03030',
+  // Indo-Saracenic palette
+  sandstone: '#c2613a',
+  sandstoneLight: '#d88050',
+  sandstoneDark: '#8a3820',
+  marble: '#f0ece0',
+  marbleCream: '#e8e0c8',
+  mughalGold: '#d0a840',
+  mughalRed: '#a04020',
+  pietraDura: '#40a060',
+  archRed: '#b85030',
 };

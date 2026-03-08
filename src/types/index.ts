@@ -51,6 +51,24 @@ export enum TileType {
   CAMPSITE = 37,
   HUT = 38,
   LAKE = 39,
+  // Indo-Saracenic architecture
+  SANDSTONE = 40,
+  MARBLE = 41,
+  DOME = 42,
+  ARCH = 43,
+  JALI = 44,
+  MINARET = 45,
+  CHHATRI = 46,
+  BAORI_WALL = 47,
+  BAORI_WATER = 48,
+  PIETRA_DURA = 49,
+  COURTYARD = 50,
+  HAVELI_WALL = 51,
+  MUGHAL_GATE = 52,
+  MOSQUE = 53,
+  BORDER_POST = 54,
+  CANAL = 55,
+  CHARBAGH = 56,
 }
 
 export const SOLID_TILES = new Set([
@@ -70,6 +88,16 @@ export const SOLID_TILES = new Set([
   TileType.RUINS,
   TileType.HUT,
   TileType.LAKE,
+  TileType.SANDSTONE,
+  TileType.DOME,
+  TileType.JALI,
+  TileType.MINARET,
+  TileType.CHHATRI,
+  TileType.BAORI_WALL,
+  TileType.HAVELI_WALL,
+  TileType.MUGHAL_GATE,
+  TileType.MOSQUE,
+  TileType.BORDER_POST,
 ]);
 
 // Tiles that can trigger random encounters
@@ -102,6 +130,7 @@ export interface TileMapData {
   width: number;
   height: number;
   ground: TileType[][];
+  decor: (TileType | -1)[][]; // decoration layer (-1 = empty)
 }
 
 export type NPCBehavior = 'stationary' | 'wander' | 'patrol' | 'guard';

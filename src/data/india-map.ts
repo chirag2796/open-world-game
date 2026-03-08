@@ -5,9 +5,14 @@ import {
   PINE_GROVE, PALM_GROVE, JUNGLE_PATCH, BANYAN_GROVE,
   LAKE_SMALL, LAKE_MEDIUM, SWAMP_PATCH,
   ROCK_CLUSTER, CLIFF_FACE, SAND_DUNE, FLOWER_MEADOW,
-  VILLAGE_SMALL, TOWN, CITY,
+  VILLAGE_SMALL, TOWN,
   FORT_LARGE, PALACE, TEMPLE_LARGE, RUINS_SITE,
   CAMPSITE_AREA,
+  // Indo-Saracenic structures
+  MUGHAL_DARWAZA, HAVELI, MOSQUE_SMALL, JAMA_MASJID,
+  BAORI, CHARBAGH, MAUSOLEUM, CARAVANSERAI,
+  CHHATRI_PAVILION, RED_FORT, DESERT_HAVELI, BORDER_CHECKPOINT,
+  MUGHAL_CAPITAL,
   StructureTemplate,
 } from './structures';
 
@@ -388,6 +393,89 @@ const LANDMARK_PLACEMENTS: StructurePlacement[] = [
   { structure: RUINS_SITE, x: 56, y: 220 },
 ];
 
+// Indo-Saracenic landmarks — Mughal architecture across India
+const MUGHAL_PLACEMENTS: StructurePlacement[] = [
+  // === DELHI — Imperial Capital ===
+  // Red Fort (Lal Qila) — replaces generic fort
+  { structure: RED_FORT, x: 106, y: 52 },
+  // Jama Masjid — great mosque near Red Fort
+  { structure: JAMA_MASJID, x: 100, y: 52 },
+  // Mughal gate at Delhi entrance
+  { structure: MUGHAL_DARWAZA, x: 104, y: 64 },
+  // Charbagh garden in Delhi
+  { structure: CHARBAGH, x: 108, y: 64 },
+
+  // === AGRA — Mughal Heartland ===
+  // Taj Mahal (Mausoleum)
+  { structure: MAUSOLEUM, x: 118, y: 72 },
+  // Charbagh garden at Taj
+  { structure: CHARBAGH, x: 118, y: 80 },
+  // Agra Fort
+  { structure: RED_FORT, x: 112, y: 76 },
+
+  // === RAJASTHAN — Desert Palaces ===
+  // Amber — Rajput haveli district
+  { structure: DESERT_HAVELI, x: 68, y: 92 },
+  { structure: DESERT_HAVELI, x: 76, y: 92 },
+  // Jaisalmer — desert caravanserai
+  { structure: CARAVANSERAI, x: 46, y: 80 },
+  // Jodhpur — blue city havelis
+  { structure: DESERT_HAVELI, x: 50, y: 96 },
+  { structure: HAVELI, x: 54, y: 96 },
+  // Udaipur — lake palace chhatris
+  { structure: CHHATRI_PAVILION, x: 58, y: 124 },
+  { structure: CHHATRI_PAVILION, x: 62, y: 120 },
+  // Pushkar — mosque and baori
+  { structure: MOSQUE_SMALL, x: 70, y: 100 },
+  { structure: BAORI, x: 66, y: 98 },
+
+  // === UP — Mughal Core ===
+  // Lucknow — Nawab mosque
+  { structure: MOSQUE_SMALL, x: 126, y: 84 },
+  // Varanasi — ghats chhatris
+  { structure: CHHATRI_PAVILION, x: 148, y: 92 },
+  // Ayodhya — temple + mosque complex
+  { structure: MOSQUE_SMALL, x: 138, y: 80 },
+  // Allahabad — Mughal caravanserai
+  { structure: CARAVANSERAI, x: 142, y: 78 },
+
+  // === CENTRAL INDIA ===
+  // Bhopal — mosque city
+  { structure: JAMA_MASJID, x: 98, y: 120 },
+  { structure: BAORI, x: 104, y: 120 },
+  // Gwalior — Mughal gate
+  { structure: MUGHAL_DARWAZA, x: 104, y: 88 },
+
+  // === DECCAN ===
+  // Golconda — baori inside fort
+  { structure: BAORI, x: 112, y: 212 },
+  // Bijapur — Gol Gumbaz dome
+  { structure: MAUSOLEUM, x: 74, y: 228 },
+  // Aurangabad — caves + Mughal gate
+  { structure: MUGHAL_DARWAZA, x: 78, y: 192 },
+
+  // === SOUTH ===
+  // Mysore — palace with Charbagh
+  { structure: CHARBAGH, x: 86, y: 264 },
+  // Thanjavur — temple chhatris
+  { structure: CHHATRI_PAVILION, x: 114, y: 280 },
+
+  // === BENGAL & EAST ===
+  // Gaur — ruined mosque city
+  { structure: MOSQUE_SMALL, x: 174, y: 108 },
+  // Murshidabad — Nawab haveli
+  { structure: HAVELI, x: 174, y: 120 },
+
+  // === BORDER CHECKPOINTS ===
+  // Major regional borders
+  { structure: BORDER_CHECKPOINT, x: 68, y: 76 },   // Rajasthan entry from Punjab
+  { structure: BORDER_CHECKPOINT, x: 148, y: 96 },   // Bihar entry from UP
+  { structure: BORDER_CHECKPOINT, x: 92, y: 140 },   // MP to Chhattisgarh
+  { structure: BORDER_CHECKPOINT, x: 72, y: 180 },   // Maharashtra entry
+  { structure: BORDER_CHECKPOINT, x: 204, y: 108 },   // Assam entry
+  { structure: BORDER_CHECKPOINT, x: 96, y: 252 },   // Karnataka to Kerala
+];
+
 // === HELPER FUNCTIONS ===
 
 function hash(x: number, y: number): number {
@@ -473,8 +561,8 @@ function placeSettlement(ground: TileType[][], s: SettlementDef, biome: BiomeTyp
 
   // Place appropriate structure template
   if (s.type === 'capital') {
-    // Capital gets a fort + city layout
-    placeStructureCentered(ground, CITY, s.tileX, s.tileY, MAP_W, MAP_H);
+    // Capital gets Mughal capital layout
+    placeStructureCentered(ground, MUGHAL_CAPITAL, s.tileX, s.tileY, MAP_W, MAP_H);
   } else if (s.type === 'city') {
     placeStructureCentered(ground, TOWN, s.tileX, s.tileY, MAP_W, MAP_H);
   } else {
@@ -605,6 +693,11 @@ export function generateIndiaMap(): TileMapData {
     placeStructureCentered(ground, placement.structure, placement.x, placement.y, MAP_W, MAP_H);
   }
 
+  // 7b. Place Indo-Saracenic Mughal structures
+  for (const placement of MUGHAL_PLACEMENTS) {
+    placeStructureCentered(ground, placement.structure, placement.x, placement.y, MAP_W, MAP_H);
+  }
+
   // 8. Connect settlements with paths
   for (let i = 0; i < settlements.length; i++) {
     let nearest = -1, minDist = 60;
@@ -624,7 +717,12 @@ export function generateIndiaMap(): TileMapData {
   // 9. Campsites between distant settlements
   placeCampsites(ground, settlements);
 
-  return { width: MAP_W, height: MAP_H, ground };
+  // 10. Build decoration layer (initially empty)
+  const decor: (TileType | -1)[][] = Array.from({ length: MAP_H }, () =>
+    Array.from({ length: MAP_W }, () => -1 as (TileType | -1))
+  );
+
+  return { width: MAP_W, height: MAP_H, ground, decor };
 }
 
 // === EXPORTS: LOOKUP FUNCTIONS ===
@@ -640,6 +738,15 @@ export function getAllSettlements(): { settlement: SettlementDef; biome: BiomeTy
     }
   }
   return result;
+}
+
+export function getStateCode(tileX: number, tileY: number): string {
+  const tx = Math.floor(tileX / UPSCALE);
+  const ty = Math.floor(tileY / UPSCALE);
+  if (ty < 0 || ty >= TEMPLATE.length || tx < 0 || tx >= 40) return '';
+  const code = TEMPLATE[ty]?.[tx];
+  if (!code || code === '.') return '';
+  return code;
 }
 
 export function getStateName(tileX: number, tileY: number): string {
@@ -805,4 +912,21 @@ export const MINIMAP_COLORS: Record<number, string> = {
   [TileType.CAMPSITE]: '#e08030',
   [TileType.HUT]: '#9b7348',
   [TileType.LAKE]: '#3880c0',
+  [TileType.SANDSTONE]: '#c2613a',
+  [TileType.MARBLE]: '#f0ece0',
+  [TileType.DOME]: '#e8d8a0',
+  [TileType.ARCH]: '#b85030',
+  [TileType.JALI]: '#d8c8a8',
+  [TileType.MINARET]: '#c8b888',
+  [TileType.CHHATRI]: '#d0b870',
+  [TileType.BAORI_WALL]: '#a06030',
+  [TileType.BAORI_WATER]: '#2868a0',
+  [TileType.PIETRA_DURA]: '#d0c0a0',
+  [TileType.COURTYARD]: '#d8c8a0',
+  [TileType.HAVELI_WALL]: '#b06838',
+  [TileType.MUGHAL_GATE]: '#a04828',
+  [TileType.MOSQUE]: '#d8d0b8',
+  [TileType.BORDER_POST]: '#8a6840',
+  [TileType.CANAL]: '#5098c0',
+  [TileType.CHARBAGH]: '#308838',
 };

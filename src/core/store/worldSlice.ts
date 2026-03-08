@@ -14,6 +14,20 @@ export interface NPCRuntimeState {
   originY: number;
 }
 
+// Region gating: tracks which regions the player has unlocked
+export type RegionCode = string; // state code from TEMPLATE (e.g. 'D', 'r', 'l')
+
+export interface RegionGateState {
+  // Regions the player has discovered (set foot in)
+  discoveredRegions: Set<string>;
+  // Regions the player has a sanad (decree) for — can freely enter
+  unlockedRegions: Set<string>;
+  // Current region code
+  currentRegion: string;
+  // Whether showing border crossing UI
+  borderCrossing: { active: boolean; regionCode: string; regionName: string } | null;
+}
+
 export interface WorldSlice {
   // Map (generated once, stored in ref for perf — here for completeness)
   mapReady: boolean;
@@ -39,6 +53,12 @@ export interface WorldSlice {
   // UI state
   showInventory: boolean;
 
+  // Region gating
+  discoveredRegions: Set<string>;
+  unlockedRegions: Set<string>;
+  currentRegion: string;
+  borderCrossing: { active: boolean; regionCode: string; regionName: string } | null;
+
   // Actions
   setDialog: (dialog: DialogState) => void;
   advanceDialog: () => void;
@@ -53,7 +73,16 @@ export interface WorldSlice {
   setMapReady: (ready: boolean) => void;
   initNPCStates: (npcs: NPC[]) => void;
   updateNPCState: (id: string, state: Partial<NPCRuntimeState>) => void;
+  discoverRegion: (code: string) => void;
+  unlockRegion: (code: string) => void;
+  setCurrentRegion: (code: string) => void;
+  showBorderCrossing: (regionCode: string, regionName: string) => void;
+  dismissBorderCrossing: () => void;
+  isRegionUnlocked: (code: string) => boolean;
 }
+
+// Starting region (Delhi) + neighboring regions unlocked by default
+const STARTING_REGIONS = new Set(['D', 'd', 'y', 'l']);
 
 export const createWorldSlice: StateCreator<WorldSlice, [], [], WorldSlice> = (set, get) => ({
   mapReady: false,
@@ -66,6 +95,10 @@ export const createWorldSlice: StateCreator<WorldSlice, [], [], WorldSlice> = (s
   npcStates: new Map(),
   paused: false,
   showInventory: false,
+  discoveredRegions: new Set(['D']),
+  unlockedRegions: new Set(STARTING_REGIONS),
+  currentRegion: 'D',
+  borderCrossing: null,
 
   setDialog: (dialog) => set({ dialog }),
 
@@ -127,4 +160,30 @@ export const createWorldSlice: StateCreator<WorldSlice, [], [], WorldSlice> = (s
     }
     return { npcStates };
   }),
+
+  discoverRegion: (code) => set(state => {
+    if (state.discoveredRegions.has(code)) return state;
+    const discovered = new Set(state.discoveredRegions);
+    discovered.add(code);
+    return { discoveredRegions: discovered };
+  }),
+
+  unlockRegion: (code) => set(state => {
+    if (state.unlockedRegions.has(code)) return state;
+    const unlocked = new Set(state.unlockedRegions);
+    unlocked.add(code);
+    return { unlockedRegions: unlocked };
+  }),
+
+  setCurrentRegion: (code) => set({ currentRegion: code }),
+
+  showBorderCrossing: (regionCode, regionName) => set({
+    borderCrossing: { active: true, regionCode, regionName },
+  }),
+
+  dismissBorderCrossing: () => set({ borderCrossing: null }),
+
+  isRegionUnlocked: (code) => {
+    return get().unlockedRegions.has(code);
+  },
 });

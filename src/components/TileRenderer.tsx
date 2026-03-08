@@ -107,7 +107,6 @@ const TileRenderer: React.FC<TileRendererProps> = ({ map, cameraX, cameraY, useS
                 top: screenY,
                 width: SCALED_TILE,
                 height: SCALED_TILE,
-                // Keep color background as fallback while image loads
                 backgroundColor: TILE_COLORS[tile] || '#ff00ff',
               }}
             >
@@ -129,6 +128,26 @@ const TileRenderer: React.FC<TileRendererProps> = ({ map, cameraX, cameraY, useS
               }}
             >
               {detail && <DetailView type={detail.type} color={detail.color} size={SCALED_TILE} />}
+            </View>
+          );
+        }
+
+        // Decoration layer
+        const decorTile = map.decor?.[y]?.[x];
+        if (decorTile != null && decorTile !== -1) {
+          const decorDetail = TILE_DETAIL[decorTile];
+          result.push(
+            <View
+              key={`d${x}-${y}`}
+              style={{
+                position: 'absolute',
+                left: screenX,
+                top: screenY,
+                width: SCALED_TILE,
+                height: SCALED_TILE,
+              }}
+            >
+              {decorDetail && <DetailView type={decorDetail.type} color={decorDetail.color} size={SCALED_TILE} />}
             </View>
           );
         }

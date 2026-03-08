@@ -12,11 +12,12 @@ type SpriteCoord = [number, number]; // [col, row]
 // Terrain groups — tiles that visually blend together
 const WATER_GROUP = new Set([
   TileType.OCEAN, TileType.DEEP_OCEAN, TileType.SHALLOW_WATER,
-  TileType.RIVER, TileType.LAKE,
+  TileType.RIVER, TileType.LAKE, TileType.CANAL, TileType.BAORI_WATER,
 ]);
 const GROUND_GROUP = new Set([
   TileType.PLAINS, TileType.TALL_GRASS, TileType.FARM,
   TileType.FLOWERS, TileType.GARDEN, TileType.SWAMP,
+  TileType.CHARBAGH, TileType.COURTYARD, TileType.PIETRA_DURA,
 ]);
 const SAND_GROUP = new Set([
   TileType.DESERT, TileType.SAND_DUNES, TileType.BEACH,
@@ -33,6 +34,10 @@ const BUILDING_GROUP = new Set([
   TileType.WALL_MUD, TileType.WALL_STONE, TileType.ROOF,
   TileType.DOOR, TileType.FORT_WALL, TileType.PALACE,
   TileType.TEMPLE, TileType.MARKET, TileType.HUT,
+  TileType.SANDSTONE, TileType.MARBLE, TileType.DOME,
+  TileType.ARCH, TileType.JALI, TileType.MINARET,
+  TileType.CHHATRI, TileType.BAORI_WALL, TileType.HAVELI_WALL,
+  TileType.MUGHAL_GATE, TileType.MOSQUE, TileType.BORDER_POST,
 ]);
 
 function sameGroup(a: TileType, b: TileType): boolean {
@@ -99,6 +104,25 @@ const PRIMARY_SPRITE: Record<TileType, SpriteCoord> = {
   [TileType.BRIDGE]:        [5, 4],
   [TileType.CAMPSITE]:      [5, 4],
   [TileType.HUT]:           [7, 1],
+
+  // Indo-Saracenic (use closest existing sprites as fallback)
+  [TileType.SANDSTONE]:     [14, 6],
+  [TileType.MARBLE]:        [13, 5],
+  [TileType.DOME]:          [8, 0],
+  [TileType.ARCH]:          [11, 1],
+  [TileType.JALI]:          [7, 1],
+  [TileType.MINARET]:       [14, 6],
+  [TileType.CHHATRI]:       [8, 0],
+  [TileType.BAORI_WALL]:    [7, 1],
+  [TileType.BAORI_WATER]:   [1, 1],
+  [TileType.PIETRA_DURA]:   [1, 3],
+  [TileType.COURTYARD]:     [5, 4],
+  [TileType.HAVELI_WALL]:   [7, 1],
+  [TileType.MUGHAL_GATE]:   [11, 1],
+  [TileType.MOSQUE]:        [9, 0],
+  [TileType.BORDER_POST]:   [7, 1],
+  [TileType.CANAL]:         [1, 0],
+  [TileType.CHARBAGH]:      [1, 3],
 };
 
 // Edge-aware sprite variants for terrain that should have smooth edges
