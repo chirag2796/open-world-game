@@ -1,5 +1,21 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(find \"/Users/chiraggupta/Projects/PPS/First-Game/assets/Downloads/The Fan-tasy Tileset \\(Free\\)/Art\" -name \"*.png\")",
+      "Bash(xargs -I {} bash -c 'echo \"\"{}\"\"; sips -g pixelWidth -g pixelHeight \"\"{}\"\" 2>&1 | grep -E \"\"pixelWidth|pixelHeight\"\"')",
+      "Bash(for file in \"/Users/chiraggupta/Projects/PPS/First-Game/assets/Downloads/The Fan-tasy Tileset \\(Free\\)/Art\"/*/*.png)",
+      "Bash(do)",
+      "Bash(echo \"$file\")",
+      "Bash(sips -g pixelWidth -g pixelHeight \"$file\")",
+      "Bash(done)",
+      "Bash(for file in /tmp/puny-chars/Puny-Characters/*.png)",
+      "Bash(ls -1 \"/Users/chiraggupta/Projects/PPS/First-Game/assets/Downloads/The Fan-tasy Tileset \\(Free\\)/Art/\")",
+      "Bash(echo \"=== TILESET ATLAS FILES ===\" ls -1 \"/Users/chiraggupta/Projects/PPS/First-Game/assets/Downloads/The Fan-tasy Tileset \\(Free\\)/Art/\"*/Atlas/)",
+      "Bash(ls -la \"/Users/chiraggupta/Projects/PPS/First-Game/assets/Downloads/The Fan-tasy Tileset \\(Free\\)/Art/\")",
+      "Bash(ls -1 \"/Users/chiraggupta/Projects/PPS/First-Game/assets/Downloads/The Fan-tasy Tileset \\(Free\\)/Art/Shadows/\")",
+      "Bash(ls -1 \"/Users/chiraggupta/Projects/PPS/First-Game/assets/Downloads/The Fan-tasy Tileset \\(Free\\)/Art/Props/\")",
+      "Bash(grep \"\\\\.png$\")"
+    ],
     "additionalDirectories": [
       "/private/tmp/expo-test-build"
     ]

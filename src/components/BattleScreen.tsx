@@ -6,6 +6,9 @@ import { MOVES } from '../data/combatMoves';
 import { InventoryState } from '../engine/useInventory';
 import { PALETTE, SCREEN_WIDTH, SCREEN_HEIGHT } from '../engine/constants';
 import ParticleEffect, { ParticleType } from './ParticleEffect';
+import VFXSprite from './VFXSprite';
+import { VFXAnimDef, MOVE_VFX, ACTION_VFX } from '../engine/vfxSprites';
+import { BattlePlayerSprite, BattleEnemySprite } from './BattleCharSprite';
 
 // Type color mapping for move buttons and badges
 const TYPE_COLORS: Record<CreatureType, string> = {
@@ -41,56 +44,7 @@ const HPBar: React.FC<{ current: number; max: number; width: number }> = memo(({
   );
 });
 
-const EnemySprite: React.FC<{ bodyColor: string; headColor: string; shake: boolean }> = memo(({ bodyColor, headColor, shake }) => {
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (shake) {
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 8, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -8, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -6, duration: 50, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [shake]);
-
-  return (
-    <Animated.View style={[styles.enemySprite, { transform: [{ translateX: shakeAnim }] }]}>
-      <View style={[styles.enemyBody, { backgroundColor: bodyColor }]} />
-      <View style={[styles.enemyHead, { backgroundColor: headColor }]} />
-      <View style={styles.enemyEyeL} />
-      <View style={styles.enemyEyeR} />
-      <View style={[styles.enemyArmL, { backgroundColor: bodyColor }]} />
-      <View style={[styles.enemyArmR, { backgroundColor: bodyColor }]} />
-    </Animated.View>
-  );
-});
-
-const PlayerSprite: React.FC<{ flash: boolean }> = memo(({ flash }) => {
-  const flashAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (flash) {
-      Animated.sequence([
-        Animated.timing(flashAnim, { toValue: 0.2, duration: 80, useNativeDriver: true }),
-        Animated.timing(flashAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-        Animated.timing(flashAnim, { toValue: 0.2, duration: 80, useNativeDriver: true }),
-        Animated.timing(flashAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [flash]);
-
-  return (
-    <Animated.View style={[styles.playerSprite, { opacity: flashAnim }]}>
-      <View style={styles.pBody} />
-      <View style={styles.pHead} />
-      <View style={styles.pShield} />
-      <View style={styles.pSword} />
-    </Animated.View>
-  );
-});
+// Old View-based sprites replaced by BattleCharSprite components
 
 // Type badge component
 const TypeBadge: React.FC<{ type: CreatureType }> = memo(({ type }) => (
@@ -112,8 +66,11 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
   const [playerFlash, setPlayerFlash] = useState(false);
   const [particleType, setParticleType] = useState<ParticleType | null>(null);
   const [particlePos, setParticlePos] = useState({ x: 0, y: 0 });
+  const [vfxAnim, setVfxAnim] = useState<VFXAnimDef | null>(null);
+  const [vfxPos, setVfxPos] = useState({ x: 0, y: 0 });
   const screenFlash = useRef(new Animated.Value(0)).current;
   const prevPhaseRef = useRef(battle.phase);
+  const lastMoveRef = useRef<string | null>(null);
 
   // Reset panel when we return to select
   useEffect(() => {
@@ -122,27 +79,62 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
     }
   }, [battle.phase]);
 
+  // Track last move used (for VFX lookup)
+  useEffect(() => {
+    if (battle.lastAction === 'move' && battle.message) {
+      // Extract move from combat log — find last used move ID
+      const moveIds = Object.keys(MOVES);
+      for (const id of moveIds) {
+        if (battle.message.includes(MOVES[id].name)) {
+          lastMoveRef.current = id;
+          break;
+        }
+      }
+    }
+  }, [battle.message]);
+
   // Trigger animations on phase changes
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = battle.phase;
+
+    // Enemy position (center of enemy sprite area)
+    const enemyVfxX = SCREEN_WIDTH - 60;
+    const enemyVfxY = 130;
+    // Player position
+    const playerVfxX = 80;
+    const playerVfxY = SCREEN_HEIGHT * 0.35;
 
     if (battle.phase === 'animate' && prev === 'select') {
       // Player acted — shake enemy
       if (battle.lastAction === 'move') {
         setEnemyShake(true);
         setTimeout(() => setEnemyShake(false), 400);
-        setParticlePos({ x: SCREEN_WIDTH - 70, y: 110 });
+
+        // Show VFX sprite on enemy
+        const moveId = lastMoveRef.current;
+        const vfx = moveId ? MOVE_VFX[moveId] : null;
+        if (vfx) {
+          setVfxPos({ x: enemyVfxX, y: enemyVfxY });
+          setVfxAnim(vfx);
+        }
+
+        // Also show particles for extra punch
+        setParticlePos({ x: enemyVfxX, y: enemyVfxY });
         setParticleType('slash');
         Animated.sequence([
           Animated.timing(screenFlash, { toValue: 0.3, duration: 60, useNativeDriver: true }),
           Animated.timing(screenFlash, { toValue: 0, duration: 200, useNativeDriver: true }),
         ]).start();
       } else if (battle.lastAction === 'defend') {
-        setParticlePos({ x: 60, y: SCREEN_HEIGHT * 0.35 });
+        setVfxPos({ x: playerVfxX, y: playerVfxY });
+        setVfxAnim(ACTION_VFX.defend);
+        setParticlePos({ x: playerVfxX, y: playerVfxY });
         setParticleType('defend');
       } else if (battle.lastAction === 'item') {
-        setParticlePos({ x: 60, y: SCREEN_HEIGHT * 0.35 });
+        setVfxPos({ x: playerVfxX, y: playerVfxY });
+        setVfxAnim(ACTION_VFX.heal_item);
+        setParticlePos({ x: playerVfxX, y: playerVfxY });
         setParticleType('heal');
       }
     }
@@ -150,7 +142,12 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
       // Enemy attacked player
       setPlayerFlash(true);
       setTimeout(() => setPlayerFlash(false), 400);
-      setParticlePos({ x: 60, y: SCREEN_HEIGHT * 0.35 });
+
+      // Show enemy attack VFX on player
+      setVfxPos({ x: playerVfxX, y: playerVfxY });
+      setVfxAnim(ACTION_VFX.enemy_hit);
+
+      setParticlePos({ x: playerVfxX, y: playerVfxY });
       setParticleType('hit');
       Animated.sequence([
         Animated.timing(screenFlash, { toValue: 0.2, duration: 50, useNativeDriver: true }),
@@ -158,6 +155,8 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
       ]).start();
     }
     if (battle.phase === 'result' && battle.result === 'win') {
+      setVfxPos({ x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT * 0.3 });
+      setVfxAnim(ACTION_VFX.victory);
       setParticlePos({ x: SCREEN_WIDTH / 2, y: SCREEN_HEIGHT * 0.3 });
       setParticleType('levelup');
     }
@@ -292,6 +291,7 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
       {/* Battle scene area */}
       <View style={styles.sceneArea}>
         <View style={styles.sceneBg} />
+        <View style={styles.sceneGradient} />
         <View style={styles.groundLine} />
 
         {/* Enemy side */}
@@ -304,12 +304,12 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
           <HPBar current={battle.enemyHP} max={enemy.hp} width={120} />
           <Text style={styles.hpText}>{battle.enemyHP}/{enemy.hp}</Text>
           {battle.enemyPoisoned && <Text style={styles.statusText}>PSN</Text>}
-          <EnemySprite bodyColor={enemy.bodyColor} headColor={enemy.headColor} shake={enemyShake} />
+          <BattleEnemySprite enemyId={enemy.id} size={80} shake={enemyShake} isDead={battle.phase === 'result' && battle.result === 'win'} />
         </View>
 
         {/* Player side */}
         <View style={styles.playerSide}>
-          <PlayerSprite flash={playerFlash} />
+          <BattlePlayerSprite size={72} flash={playerFlash} isDead={battle.phase === 'result' && battle.result === 'lose'} />
           <View style={styles.playerInfo}>
             <Text style={styles.playerName}>You</Text>
             <Text style={styles.playerLevelText}>Lv.{battle.playerLevel}</Text>
@@ -330,6 +330,14 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
       <View style={styles.actionArea}>
         {renderActionPanel()}
       </View>
+
+      {/* VFX sprite animations */}
+      <VFXSprite
+        anim={vfxAnim}
+        x={vfxPos.x}
+        y={vfxPos.y}
+        onComplete={() => setVfxAnim(null)}
+      />
 
       {/* Particle effects */}
       <ParticleEffect
@@ -370,14 +378,19 @@ const styles = StyleSheet.create({
   sceneBg: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: '40%',
-    backgroundColor: '#1a2a4a',
+    backgroundColor: '#0e1a30',
+  },
+  sceneGradient: {
+    position: 'absolute',
+    left: 0, right: 0, top: '30%', bottom: '40%',
+    backgroundColor: '#1a2840',
   },
   groundLine: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0, top: '60%',
-    backgroundColor: '#2a3a2a',
+    backgroundColor: '#1a2a1a',
     borderTopWidth: 3,
-    borderTopColor: '#4a6a4a',
+    borderTopColor: '#3a5a3a',
   },
   enemySide: {
     position: 'absolute',
@@ -402,47 +415,8 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     marginBottom: 4,
   },
-  enemySprite: {
-    width: 80,
-    height: 80,
+  enemySpriteWrap: {
     marginTop: 8,
-    position: 'relative',
-  },
-  enemyBody: {
-    position: 'absolute',
-    bottom: 0, left: 15, width: 50, height: 45,
-    borderRadius: 6,
-  },
-  enemyHead: {
-    position: 'absolute',
-    top: 0, left: 20, width: 40, height: 35,
-    borderRadius: 8,
-  },
-  enemyEyeL: {
-    position: 'absolute',
-    top: 12, left: 28,
-    width: 8, height: 8,
-    backgroundColor: '#ff3030',
-    borderRadius: 4,
-  },
-  enemyEyeR: {
-    position: 'absolute',
-    top: 12, left: 44,
-    width: 8, height: 8,
-    backgroundColor: '#ff3030',
-    borderRadius: 4,
-  },
-  enemyArmL: {
-    position: 'absolute',
-    bottom: 15, left: 5,
-    width: 14, height: 28,
-    borderRadius: 4,
-  },
-  enemyArmR: {
-    position: 'absolute',
-    bottom: 15, right: 5,
-    width: 14, height: 28,
-    borderRadius: 4,
   },
   playerSide: {
     position: 'absolute',
@@ -451,37 +425,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
   },
-  playerSprite: {
-    width: 64,
-    height: 72,
-    position: 'relative',
+  playerSpriteWrap: {
     marginRight: 12,
-  },
-  pBody: {
-    position: 'absolute',
-    bottom: 0, left: 12, width: 40, height: 40,
-    backgroundColor: '#30a030',
-    borderRadius: 4,
-  },
-  pHead: {
-    position: 'absolute',
-    top: 0, left: 16, width: 32, height: 30,
-    backgroundColor: PALETTE.skin,
-    borderRadius: 6,
-  },
-  pShield: {
-    position: 'absolute',
-    bottom: 8, left: 2,
-    width: 14, height: 24,
-    backgroundColor: '#4060a0',
-    borderRadius: 3,
-  },
-  pSword: {
-    position: 'absolute',
-    bottom: 12, right: 2,
-    width: 6, height: 32,
-    backgroundColor: '#c0c0c0',
-    borderRadius: 2,
   },
   playerInfo: {
     marginBottom: 4,
