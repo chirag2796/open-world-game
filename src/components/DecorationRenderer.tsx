@@ -95,9 +95,10 @@ function getDecorationForTile(
     case TileType.SAND_DUNES:
     case TileType.DRY_GRASS:
     case TileType.CRACKED_EARTH: {
-      // Desert areas: sparse, only occasional props
-      if (hash > 0.15) return null;
-      return { ...SIGN_SPRITE, offsetY: SCALED_TILE - SIGN_SPRITE.h };
+      // Desert areas: very sparse small rocks
+      if (hash > 0.08) return null;
+      const rock = ROCK_SPRITES[Math.floor(hash * 50) % ROCK_SPRITES.length];
+      return { ...rock, offsetY: SCALED_TILE - rock.h - 2 };
     }
     case TileType.CACTUS: {
       // Cactus gets a small bush sprite (stand-in)
@@ -153,7 +154,10 @@ function getDecorationForTile(
       return { ...HAYSTACK_SPRITE, offsetY: SCALED_TILE - HAYSTACK_SPRITE.h };
     }
     case TileType.CAMPSITE: {
-      return { ...SIGN_SPRITE, offsetY: SCALED_TILE - SIGN_SPRITE.h };
+      // Only one sign per campsite area, not on every tile
+      if (hash < 0.08) return { ...SIGN_SPRITE, offsetY: SCALED_TILE - SIGN_SPRITE.h };
+      if (hash < 0.14) return { ...BARREL_SPRITE, offsetY: SCALED_TILE - BARREL_SPRITE.h };
+      return null;
     }
     case TileType.GARDEN:
     case TileType.CHARBAGH: {
