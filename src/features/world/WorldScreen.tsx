@@ -264,6 +264,21 @@ const WorldScreen: React.FC = () => {
     store.getState().setWeather(currentWeather);
   }, [currentWeather]);
 
+  // === NPC TICK (independent of player movement) ===
+  // Increment a counter every ~4 game ticks (~8fps) so NPC positions update visually
+  const [npcTick, setNpcTick] = useState(0);
+  const npcTickAccum = useRef(0);
+  useEffect(() => {
+    const NPC_RENDER_INTERVAL = 4; // update NPC visuals every 4 game ticks (~8fps)
+    gameLoop.setOnNpcTick(() => {
+      npcTickAccum.current++;
+      if (npcTickAccum.current >= NPC_RENDER_INTERVAL) {
+        npcTickAccum.current = 0;
+        setNpcTick(t => t + 1);
+      }
+    });
+  }, []);
+
   // === NPC RENDER DATA ===
   const npcRenderData = useMemo(() => {
     const npcs = entityMgr.getNPCs();
@@ -275,8 +290,7 @@ const WorldScreen: React.FC = () => {
       dir: e.sprite.direction,
       animFrame: e.sprite.moving ? e.sprite.animFrame : 0,
     }));
-    // Re-derive every render (NPCs are mutable in ECS)
-  }, [playerPos]); // eslint-disable-line — re-derive when player moves
+  }, [npcTick, playerPos]); // NPC positions update on their own tick + when player moves
 
   // === LOCATION INFO ===
   const stateName = getStateName(playerTileX, playerTileY);

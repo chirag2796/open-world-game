@@ -23,6 +23,7 @@ export class GameLoop {
 
   // Callbacks
   private onTick: (() => void) | null = null;
+  private onNpcTick: (() => void) | null = null;
 
   constructor() {}
 
@@ -56,6 +57,10 @@ export class GameLoop {
 
   setOnTick(cb: () => void) {
     this.onTick = cb;
+  }
+
+  setOnNpcTick(cb: () => void) {
+    this.onNpcTick = cb;
   }
 
   start() {
@@ -108,6 +113,7 @@ export class GameLoop {
     }
 
     this.onTick?.();
+    this.onNpcTick?.();
   }
 
   isRunning() {

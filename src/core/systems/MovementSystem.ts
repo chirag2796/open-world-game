@@ -1,4 +1,4 @@
-import { System } from '../ecs/types';
+import { System, Entity } from '../ecs/types';
 import { SOLID_TILES } from '../../types';
 import { SCALED_TILE, DEV_MODE } from '../../engine/constants';
 
@@ -21,6 +21,31 @@ function canMoveTo(
     if (SOLID_TILES.has(map.ground[ty][tx])) return false;
   }
   return true;
+}
+
+// Check if a bounding box at (px, py) overlaps any NPC entity
+function collidesWithNPC(
+  px: number, py: number,
+  entities: Map<string, Entity>,
+): boolean {
+  const inset = SCALED_TILE * 0.2;
+  const pLeft = px + inset;
+  const pRight = px + SCALED_TILE - inset;
+  const pTop = py + inset;
+  const pBottom = py + SCALED_TILE - inset;
+
+  for (const [id, entity] of entities) {
+    if (id === 'player' || !entity.npc || !entity.collision?.solid) continue;
+    const eLeft = entity.position.x + inset;
+    const eRight = entity.position.x + SCALED_TILE - inset;
+    const eTop = entity.position.y + inset;
+    const eBottom = entity.position.y + SCALED_TILE - inset;
+
+    if (pLeft < eRight && pRight > eLeft && pTop < eBottom && pBottom > eTop) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export const MovementSystem: System = (entities, ctx) => {
@@ -55,11 +80,11 @@ export const MovementSystem: System = (entities, ctx) => {
     x = Math.max(0, Math.min(nx, (ctx.map.width - 1) * SCALED_TILE));
     y = Math.max(0, Math.min(ny, (ctx.map.height - 1) * SCALED_TILE));
     moved = true;
-  } else if (canMoveTo(nx, ny, inset, ctx.map)) {
+  } else if (canMoveTo(nx, ny, inset, ctx.map) && !collidesWithNPC(nx, ny, entities)) {
     x = nx; y = ny; moved = true;
-  } else if (nx !== x && canMoveTo(nx, y, inset, ctx.map)) {
+  } else if (nx !== x && canMoveTo(nx, y, inset, ctx.map) && !collidesWithNPC(nx, y, entities)) {
     x = nx; moved = true;
-  } else if (ny !== y && canMoveTo(x, ny, inset, ctx.map)) {
+  } else if (ny !== y && canMoveTo(x, ny, inset, ctx.map) && !collidesWithNPC(x, ny, entities)) {
     y = ny; moved = true;
   }
 
