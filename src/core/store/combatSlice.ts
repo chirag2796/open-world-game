@@ -3,9 +3,10 @@ import { BattleAction, BattleState, CombatStackState, EnemyDef, BiomeType, Comba
 import { getRandomEnemy, ENEMIES } from '../../data/enemies';
 import { MOVES, DEFAULT_PLAYER_MOVES } from '../../data/combatMoves';
 import {
-  calculateDamage, calculateTurnOrder, pickEnemyMove,
+  calculateDamage, calculateTurnOrder,
   shouldApplyEffect, poisonDamage, getEffectivenessLabel,
 } from '../../engine/combatEngine';
+import { pickEnemyMoveAI, buildAIContext } from '../../engine/enemyAI';
 
 export interface CombatSlice {
   // Full battle state
@@ -159,7 +160,7 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
     const playerMove = MOVES[moveId];
     if (!playerMove) return;
 
-    const enemyMove = pickEnemyMove(battle.enemy.moves);
+    const enemyMove = pickEnemyMoveAI(battle.enemy, buildAIContext(battle));
     const turnOrder = calculateTurnOrder(
       battle.playerSpeed,
       battle.enemy.speed,
@@ -202,7 +203,7 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
     const { battle, setBattle, addCombatLog } = get();
     if (!battle.enemy || battle.phase !== 'select') return;
 
-    const enemyMove = pickEnemyMove(battle.enemy.moves);
+    const enemyMove = pickEnemyMoveAI(battle.enemy, buildAIContext(battle));
 
     const stack: CombatStackState[] = [
       { type: 'show_message', message: 'You brace for impact!', duration: 600 },
@@ -239,7 +240,7 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
       addCombatLog('Got away safely!');
     } else {
       // Failed to run — enemy gets a free turn
-      const enemyMove = pickEnemyMove(battle.enemy.moves);
+      const enemyMove = pickEnemyMoveAI(battle.enemy, buildAIContext(battle));
       const stack: CombatStackState[] = [
         { type: 'show_message', message: "Couldn't escape!", duration: 600 },
         { type: 'execute_move', actorId: 'enemy', moveId: enemyMove.id, targetId: 'player' },
@@ -336,6 +337,15 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
                   statusMsg = `${b.enemy?.name}'s defense rose!`;
                 }
                 break;
+              case 'lower_atk':
+                if (isPlayer) {
+                  updates.enemyAtkBoost = Math.max(-6, b.enemyAtkBoost - 1);
+                  statusMsg = `${b.enemy?.name}'s attack fell!`;
+                } else {
+                  updates.atkBoost = Math.max(-6, b.atkBoost - 1);
+                  statusMsg = 'Your attack fell!';
+                }
+                break;
               case 'heal_self': {
                 const healAmt = Math.floor((isPlayer ? b.playerMaxHP : (b.enemy?.hp ?? 30)) * 0.25);
                 if (isPlayer) {
@@ -399,7 +409,7 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
           if (result.crit) dmgMsg += critLabel;
           if (effectLabel) dmgMsg += ` ${effectLabel}`;
 
-          // Check for effect application (poison, lower_def on enemy)
+          // Check for effect application (poison, lower_def, drain, lower_atk on enemy)
           if (move.effect && shouldApplyEffect(move)) {
             switch (move.effect) {
               case 'poison':
@@ -414,6 +424,18 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
                 dmgMsg += " Enemy's defense fell!";
                 addCombatLog("Enemy's defense fell!");
                 break;
+              case 'lower_atk':
+                updates.enemyAtkBoost = Math.max(-6, b.enemyAtkBoost - 1);
+                dmgMsg += " Enemy's attack fell!";
+                addCombatLog("Enemy's attack fell!");
+                break;
+              case 'drain': {
+                const healAmt = Math.floor(finalDamage * 0.5);
+                updates.playerHP = Math.min(b.playerMaxHP, b.playerHP + healAmt);
+                dmgMsg += ` Drained ${healAmt} HP!`;
+                addCombatLog(`Drained ${healAmt} HP!`);
+                break;
+              }
             }
           }
 
@@ -447,6 +469,18 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
                 dmgMsg += ' Your defense fell!';
                 addCombatLog('Your defense fell!');
                 break;
+              case 'lower_atk':
+                updates.atkBoost = Math.max(-6, b.atkBoost - 1);
+                dmgMsg += ' Your attack fell!';
+                addCombatLog('Your attack fell!');
+                break;
+              case 'drain': {
+                const healAmt = Math.floor(finalDamage * 0.5);
+                updates.enemyHP = Math.min(b.enemy?.hp ?? 30, b.enemyHP + healAmt);
+                dmgMsg += ` ${b.enemy?.name} drained ${healAmt} HP!`;
+                addCombatLog(`${b.enemy?.name} drained ${healAmt} HP!`);
+                break;
+              }
             }
           }
 

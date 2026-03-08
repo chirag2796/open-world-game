@@ -291,10 +291,21 @@ export interface CombatMove {
   power: number;        // base power (0 = status move)
   accuracy: number;     // 0-100
   priority: number;     // higher goes first (default 0, quick strikes = 1)
-  effect?: 'heal_self' | 'boost_atk' | 'boost_def' | 'lower_def' | 'poison';
+  effect?: 'heal_self' | 'boost_atk' | 'boost_def' | 'lower_def' | 'lower_atk' | 'poison' | 'drain';
   effectChance?: number;
   description: string;
 }
+
+export type EnemyAIType =
+  | 'random'           // pick moves randomly (default, existing behavior)
+  | 'aggressive'       // prioritize high-damage moves
+  | 'defensive'        // use buffs and heals more often
+  | 'berserk_beast'    // go berserk (boost ATK, lower DEF) when HP < 30%
+  | 'vampiric'         // prioritize drain moves to sustain
+  | 'tactical'         // score moves based on type effectiveness
+  | 'tank'             // prioritize defense boosts, sunder player
+  | 'guardian'         // mix of defensive + retaliatory strikes
+  | 'swarm';           // prioritize debuffs and poison
 
 export interface EnemyDef {
   id: string;
@@ -312,6 +323,8 @@ export interface EnemyDef {
   creatureType: CreatureType;
   moves: string[];        // move IDs (up to 4)
   lootTableId?: string;   // references LOOT_TABLES for item drops
+  aiType?: EnemyAIType;   // combat AI behavior pattern
+  bossPhases?: number;    // multi-phase bosses (e.g. 2 = two phases)
 }
 
 export type BattleAction = 'attack' | 'defend' | 'item' | 'run' | 'move';

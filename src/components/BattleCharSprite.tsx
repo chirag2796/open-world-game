@@ -65,6 +65,31 @@ const ENEMY_SPRITE_MAP: Record<string, string> = {
   'rock_golem':       'skeleton-warrior',
   // Naga → skeleton mage
   'naga_spirit':      'skeleton-mage',
+
+  // === Plan 8: Indian Mythological Bestiary ===
+  // Humanoids
+  'thug':             'rogue',
+  'mughal_guard':     'knight',
+  'sepoy':            'orc-warrior',
+  // Mythical Beasts (Vahanas) — large/imposing sprites
+  'yali':             'orc-shaman',     // temple guardian — shaman has mystical look
+  'makara':           'orc-warrior',    // sea creature — warrior bulk
+  'garuda':           'orc',            // bird king — base orc for speed
+  'navagunjara':      'wizard',         // divine chimera — mystical appearance
+  'sharabha':         'orc-warrior',    // eight-legged beast
+  // Malevolent Spirits — dark/skeletal sprites
+  'pishacha':         'skeleton',       // flesh-eating spirit
+  'vetala':           'skeleton-mage',  // corpse-possessing spirit
+  'nishi':            'skeleton',       // shadow spirit
+  'rakshasa':         'skeleton-warrior', // shapeshifting demon — armored
+  'churel':           'skeleton-mage',  // vengeful spirit
+  // Serpentine & Avian
+  'naga_king':        'wizard',         // serpent king — mystical
+  'gandeberunda':     'orc-shaman',     // two-headed bird — shaman bulk
+  // Bhoota Vahana Yantra (Automatons)
+  'bhoota_sentinel':  'skeleton-warrior',
+  'bhoota_chariot':   'skeleton-warrior',
+  'bhoota_colossus':  'knight',         // largest automaton — knight for imposing look
 };
 
 function getEnemySheet(enemyId: string): EnemySpriteSheet {
