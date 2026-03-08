@@ -71,3 +71,8 @@ export const useQuestState = () => useGameStore(useShallow(s => ({
   activeStepIndex: s.activeStepIndex,
   questLog: s.questLog,
 })));
+
+export const useSideQuestState = () => useGameStore(useShallow(s => ({
+  sideQuestRegistry: s.sideQuestRegistry,
+  regionalRep: s.regionalRep,
+})));

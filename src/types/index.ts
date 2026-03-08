@@ -346,3 +346,64 @@ export interface BattleState {
   poisoned: boolean;       // player poisoned
   enemyPoisoned: boolean;
 }
+
+// === Side Quest System (Plan 6) ===
+
+export type SideQuestStatus = 'not_started' | 'active' | 'completed' | 'failed';
+
+export type SideQuestArchetype = 'mystery' | 'protection' | 'elimination' | 'fetch' | 'escort';
+
+export interface SideQuestStep {
+  id: string;
+  description: string;
+  trigger: {
+    type: 'position' | 'flag' | 'combat_win' | 'item' | 'dialog' | 'auto';
+    tileX?: number;
+    tileY?: number;
+    radius?: number;
+    flag?: string;
+    itemId?: string;
+    dialogTreeId?: string;
+  };
+  onComplete?: {
+    setFlags?: string[];
+    giveItems?: { itemId: string; quantity: number }[];
+    giveGold?: number;
+    karmaEffect?: number;
+    repEffect?: { region: string; amount: number };
+    dialogTreeId?: string;
+    startBattleWithEnemy?: string;
+    message?: string;
+  };
+}
+
+export interface SideQuestDef {
+  id: string;
+  title: string;
+  description: string;
+  archetype: SideQuestArchetype;
+  // Object-Action-Location formula
+  object: string;        // what the quest is about
+  action: string;        // what to do
+  location: string;      // where it takes place
+  // Requirements
+  regionCode: string;    // which region this quest is in
+  minLevel?: number;
+  requiredFlag?: string; // must have this flag to unlock
+  requiredKarma?: number; // min karma to unlock
+  // Arrowhead chain
+  chainId?: string;      // links quests into arrowhead chains
+  chainOrder?: number;   // position in chain (1, 2, 3...)
+  // Steps
+  steps: SideQuestStep[];
+  // Butterfly effect: flags that matter in future quests/main story
+  butterflyFlags?: string[];
+  // Rewards
+  xpReward: number;
+  goldReward: number;
+  rewardItems?: { itemId: string; quantity: number }[];
+  karmaReward?: number;
+  repReward?: { region: string; amount: number };
+  // Unlock next quest in chain
+  nextQuestId?: string;
+}

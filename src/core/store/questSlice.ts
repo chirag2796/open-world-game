@@ -1,19 +1,32 @@
 import { StateCreator } from 'zustand';
-import { MAIN_QUESTS, QuestDef, QuestStep, QuestTrigger } from '../../data/quests';
-import { SCALED_TILE } from '../../engine/constants';
+import { MAIN_QUESTS, QuestDef, QuestStep } from '../../data/quests';
+import { SIDE_QUESTS } from '../../data/sideQuests';
+import { SideQuestDef, SideQuestStatus, SideQuestStep } from '../../types';
+import {
+  SideQuestRegistry, RegionalRep,
+  createInitialRegistry, createInitialRep, adjustRep, getRep,
+  checkSideQuestTriggers, advanceSideQuest, startSideQuest,
+  getActiveQuests, getAvailableQuests, getSideQuestObjective,
+  getButterflyConsequences, ButterflyConsequence,
+  SideQuestTriggerContext, SideQuestTriggerResult,
+} from '../../engine/sideQuestSystem';
 
 export interface QuestSlice {
-  // Current quest state
+  // Main quest state
   activeQuestId: string;
   activeStepIndex: number;
   completedQuests: Set<string>;
   questLog: string[]; // last 10 quest messages
 
   // Combat tracking for quest triggers
-  battleWinCount: number; // total battle wins
-  regionBattleWins: Record<string, number>; // wins per region code
+  battleWinCount: number;
+  regionBattleWins: Record<string, number>;
 
-  // Actions
+  // Side quest state (Plan 6)
+  sideQuestRegistry: SideQuestRegistry;
+  regionalRep: RegionalRep;
+
+  // Main quest actions
   getActiveQuest: () => QuestDef | null;
   getActiveStep: () => QuestStep | null;
   getObjectiveText: () => string;
@@ -23,7 +36,7 @@ export interface QuestSlice {
   addQuestLog: (msg: string) => void;
   incrementBattleWins: (regionCode: string) => void;
 
-  // Trigger checking (called from game tick)
+  // Main quest trigger checking
   checkQuestTriggers: (ctx: {
     playerTileX: number;
     playerTileY: number;
@@ -33,15 +46,33 @@ export interface QuestSlice {
     triggered: boolean;
     onComplete?: QuestStep['onComplete'];
   };
+
+  // Side quest actions (Plan 6)
+  startSideQuestAction: (questId: string) => void;
+  advanceSideQuestAction: (questId: string) => { completed: boolean; nextQuestId?: string };
+  checkSideQuestTriggersAction: (ctx: SideQuestTriggerContext) => SideQuestTriggerResult[];
+  getActiveSideQuests: () => { quest: SideQuestDef; stepDescription: string }[];
+  getAvailableSideQuests: (regionCode: string, storyFlags: Set<string>, playerLevel: number, playerKarma: number) => SideQuestDef[];
+  getSideQuestStatus: (questId: string) => SideQuestStatus;
+  adjustRegionalRep: (region: string, amount: number) => void;
+  getRegionalRep: (region: string) => number;
+  getButterflyEffects: (storyFlags: Set<string>) => ButterflyConsequence[];
 }
 
 export const createQuestSlice: StateCreator<QuestSlice, [], [], QuestSlice> = (set, get) => ({
+  // Main quest state
   activeQuestId: 'MAIN_01_ORDINARY',
   activeStepIndex: 0,
   completedQuests: new Set<string>(),
   questLog: [],
   battleWinCount: 0,
   regionBattleWins: {},
+
+  // Side quest state
+  sideQuestRegistry: createInitialRegistry(),
+  regionalRep: createInitialRep(),
+
+  // ─── Main Quest Actions ──────────────────────────────────
 
   getActiveQuest: () => {
     const { activeQuestId } = get();
@@ -72,7 +103,6 @@ export const createQuestSlice: StateCreator<QuestSlice, [], [], QuestSlice> = (s
     if (nextIndex < quest.steps.length) {
       return { activeStepIndex: nextIndex };
     }
-    // Quest complete — move to next quest
     const completed = new Set(state.completedQuests);
     completed.add(state.activeQuestId);
 
@@ -83,10 +113,9 @@ export const createQuestSlice: StateCreator<QuestSlice, [], [], QuestSlice> = (s
         activeStepIndex: 0,
       };
     }
-    // No next quest — game complete
     return {
       completedQuests: completed,
-      activeStepIndex: nextIndex, // past end
+      activeStepIndex: nextIndex,
     };
   }),
 
@@ -155,15 +184,12 @@ export const createQuestSlice: StateCreator<QuestSlice, [], [], QuestSlice> = (s
         break;
       }
       case 'dialog': {
-        // Dialog triggers are handled when dialog completes — checked via flag
-        // We set a flag like `dialog_completed_<treeId>` when a dialog tree finishes
         if (trigger.dialogTreeId && ctx.storyFlags.has(`dialog_completed_${trigger.dialogTreeId}`)) {
           matched = true;
         }
         break;
       }
       case 'combat_win': {
-        // Checked via battleWinCount changes — handled in battle close
         break;
       }
       case 'auto': {
@@ -176,5 +202,62 @@ export const createQuestSlice: StateCreator<QuestSlice, [], [], QuestSlice> = (s
       return { triggered: true, onComplete: step.onComplete };
     }
     return { triggered: false };
+  },
+
+  // ─── Side Quest Actions (Plan 6) ────────────────────────
+
+  startSideQuestAction: (questId) => set(state => ({
+    sideQuestRegistry: startSideQuest(state.sideQuestRegistry, questId),
+    questLog: [...state.questLog.slice(-9), `Side quest started: ${SIDE_QUESTS[questId]?.title ?? questId}`],
+  })),
+
+  advanceSideQuestAction: (questId) => {
+    const state = get();
+    const result = advanceSideQuest(state.sideQuestRegistry, questId);
+
+    if (result.completed) {
+      const quest = SIDE_QUESTS[questId];
+      const logMsg = `Side quest completed: ${quest?.title ?? questId}`;
+      set({
+        sideQuestRegistry: result.registry,
+        questLog: [...state.questLog.slice(-9), logMsg],
+      });
+    } else {
+      set({ sideQuestRegistry: result.registry });
+    }
+
+    return { completed: result.completed, nextQuestId: result.nextQuestId };
+  },
+
+  checkSideQuestTriggersAction: (ctx) => {
+    return checkSideQuestTriggers(get().sideQuestRegistry, ctx);
+  },
+
+  getActiveSideQuests: () => {
+    const active = getActiveQuests(get().sideQuestRegistry);
+    return active.map(({ quest, state }) => ({
+      quest,
+      stepDescription: getSideQuestObjective(get().sideQuestRegistry, quest.id) ?? '',
+    }));
+  },
+
+  getAvailableSideQuests: (regionCode, storyFlags, playerLevel, playerKarma) => {
+    return getAvailableQuests(regionCode, get().sideQuestRegistry, storyFlags, playerLevel, playerKarma);
+  },
+
+  getSideQuestStatus: (questId) => {
+    return get().sideQuestRegistry[questId]?.status ?? 'not_started';
+  },
+
+  adjustRegionalRep: (region, amount) => set(state => ({
+    regionalRep: adjustRep(state.regionalRep, region, amount),
+  })),
+
+  getRegionalRep: (region) => {
+    return getRep(get().regionalRep, region);
+  },
+
+  getButterflyEffects: (storyFlags) => {
+    return getButterflyConsequences(storyFlags);
   },
 });

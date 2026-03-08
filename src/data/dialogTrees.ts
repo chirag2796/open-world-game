@@ -1,12 +1,21 @@
 import { DialogTree } from '../types';
 import { QUEST_DIALOG_TREES } from './questDialogs';
+import { SIDE_QUEST_DIALOG_TREES } from './sideQuestDialogs';
 
 // Branching dialogue trees with karma effects
 // Convention: node IDs are tree_id + '_' + short label
 
+// Convert side quest dialog array to Record
+const sideQuestDialogRecord: Record<string, DialogTree> = {};
+for (const tree of SIDE_QUEST_DIALOG_TREES) {
+  sideQuestDialogRecord[tree.id] = tree;
+}
+
 export const DIALOG_TREES: Record<string, DialogTree> = {
   // Include all quest dialog trees
   ...QUEST_DIALOG_TREES,
+  // Include all side quest dialog trees
+  ...sideQuestDialogRecord,
   // === SPIRITUAL SAGE ===
   sage_intro: {
     id: 'sage_intro',
