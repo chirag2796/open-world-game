@@ -433,3 +433,62 @@ export interface SideQuestDef {
   // Unlock next quest in chain
   nextQuestId?: string;
 }
+
+// === Plan 9: Trade, Economy & Stealth ===
+
+// Trimetallic currency (Mughal standard)
+export interface Wallet {
+  muhar: number;   // gold coins (1 muhar = 15 rupia)
+  rupia: number;   // silver coins (1 rupia = 25 dam)
+  dam: number;     // copper coins (base unit)
+}
+
+// Hundi — letter of credit (safe currency transfer between cities)
+export interface Hundi {
+  id: string;
+  amount: number;       // in dam (base unit)
+  issuedAt: string;     // settlement name
+  redeemableAt: string; // settlement name
+  issueTime: number;    // game minutes when issued
+  fee: number;          // sarraf fee (percentage already deducted)
+}
+
+// Trade good definition
+export interface TradeGoodDef {
+  id: string;
+  name: string;
+  icon: string;
+  basePrice: number;      // base price in dam
+  category: 'spice' | 'textile' | 'metal' | 'gem' | 'food' | 'craft' | 'luxury';
+  originRegions: string[]; // region codes where it's produced (cheaper)
+  weight: number;          // cargo weight (affects travel speed)
+  description: string;
+}
+
+// Per-region market state
+export interface MarketState {
+  regionCode: string;
+  prices: Record<string, number>;  // tradeGoodId → current price in dam
+  supply: Record<string, number>;  // tradeGoodId → supply level (0-100)
+  demand: Record<string, number>;  // tradeGoodId → demand level (0-100)
+  lastUpdate: number;              // game minutes of last price tick
+}
+
+// Wanted level system (per-state)
+export type WantedTier = 0 | 1 | 2 | 3;
+// 0 = clean, 1 = suspected (merchants charge +20%), 2 = wanted (guards attack), 3 = hunted (elite hunters)
+
+// Stealth state
+export interface StealthState {
+  active: boolean;         // is player in stealth mode
+  noiseLevel: number;      // 0-100 (equipment weight → noise)
+  visibility: number;      // 0-100 (time of day, terrain → visibility)
+  detectionMeter: number;  // 0-100 (fills up when near guards, 100 = detected)
+}
+
+// Cargo inventory (trade goods the player is carrying)
+export interface CargoSlot {
+  tradeGoodId: string;
+  quantity: number;
+  purchasePrice: number;  // price paid per unit (in dam)
+}

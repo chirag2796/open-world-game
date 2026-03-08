@@ -28,6 +28,8 @@ import { Direction, BattleAction } from '../../types';
 import { getRequiredSanad, getRegionName } from '../../data/regions';
 import { startDialog, advanceDialog, DialogSession } from '../../engine/dialogEngine';
 import { pickEnemyMove } from '../../engine/combatEngine';
+import { formatWallet } from '../../engine/economyEngine';
+import { heatToTier, getWantedLabel } from '../../engine/stealthEngine';
 import BorderCrossingUI from '../../components/BorderCrossingUI';
 import JournalScreen from '../../components/JournalScreen';
 
@@ -60,7 +62,6 @@ const WorldScreen: React.FC = () => {
   const showInventory = useGameStore(s => s.showInventory);
   const paused = useGameStore(s => s.paused);
   const playerLevel = useGameStore(s => s.playerLevel);
-  const playerGold = useGameStore(s => s.playerGold);
   const battleActive = useGameStore(s => s.battle.active);
   const slots = useGameStore(s => s.slots);
   const equipped = useGameStore(s => s.equipped);
@@ -74,6 +75,9 @@ const WorldScreen: React.FC = () => {
   const completedQuests = useGameStore(s => s.completedQuests);
   const questLog = useGameStore(s => s.questLog);
   const [showJournal, setShowJournal] = useState(false);
+  const wallet = useGameStore(s => s.wallet);
+  const wantedHeat = useGameStore(s => s.wantedHeat);
+  const stealthActive = useGameStore(s => s.stealth.active);
 
   // Store actions (stable refs via zustand)
   const store = useGameStore;
@@ -239,9 +243,13 @@ const WorldScreen: React.FC = () => {
     }
   }, [battleActive, dialog.active, paused]);
 
-  // Sync game hour to game loop for NPC schedules
+  // Sync game hour to game loop for NPC schedules + economy ticks
   useEffect(() => {
     gameLoop.setGameHour(Math.floor(gameMinutes / 60));
+    // Decay wanted heat and tick markets every game hour
+    const s = store.getState();
+    s.decayAllWanted(gameMinutes);
+    s.tickMarkets(gameMinutes);
   }, [gameMinutes]);
 
   // === WEATHER ===
@@ -474,6 +482,8 @@ const WorldScreen: React.FC = () => {
       if (enemy) {
         state.addXP(enemy.xpReward);
         state.addGold(enemy.goldReward);
+        // Also award dam to trimetallic wallet (gold reward → dam)
+        state.addDam(enemy.goldReward * 25);
         // Loot table drops
         if (enemy.lootTableId) {
           const loot = rollLootTable(enemy.lootTableId, state.playerLevel);
@@ -592,7 +602,13 @@ const WorldScreen: React.FC = () => {
           </View>
           <View style={styles.infoRight}>
             <Text style={styles.levelText}>Lv.{playerLevel}</Text>
-            <Text style={styles.goldText}>{playerGold}G</Text>
+            <Text style={styles.goldText}>{formatWallet(wallet)}</Text>
+            {(() => {
+              const tier = heatToTier(wantedHeat[currentRegion] ?? 0);
+              const label = getWantedLabel(tier);
+              return label ? <Text style={styles.wantedText}>{label}</Text> : null;
+            })()}
+            {stealthActive && <Text style={styles.stealthText}>SNEAK</Text>}
             <Text style={styles.coordText}>({playerTileX},{playerTileY})</Text>
             <TouchableOpacity onPress={toggleDevMode} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={[styles.coordText, devModeOn && styles.devModeActive]}>
@@ -631,6 +647,16 @@ const WorldScreen: React.FC = () => {
                   <Text style={styles.bagButtonText}>J</Text>
                 </TouchableOpacity>
                 <Text style={styles.buttonLabelText}>LOG</Text>
+              </View>
+              <View style={styles.buttonWithLabel}>
+                <TouchableOpacity
+                  style={[styles.stealthButton, stealthActive && styles.stealthButtonActive]}
+                  onPress={() => { playSFX('menu_select'); store.getState().toggleStealth(); }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.bagButtonText}>S</Text>
+                </TouchableOpacity>
+                <Text style={styles.buttonLabelText}>SNEAK</Text>
               </View>
             </View>
           </View>
@@ -766,6 +792,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'monospace',
     marginTop: 2,
+  },
+  wantedText: {
+    color: '#ff4444',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+  },
+  stealthText: {
+    color: '#88ccff',
+    fontSize: 10,
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+  },
+  stealthButton: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: '#2a4a2a', borderWidth: 3, borderColor: '#4a7a4a',
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+  },
+  stealthButtonActive: {
+    backgroundColor: '#4a7a4a', borderColor: '#88ccff',
   },
 });
 

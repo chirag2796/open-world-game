@@ -5,8 +5,9 @@ import { createWorldSlice, WorldSlice } from './worldSlice';
 import { createInventorySlice, InventorySlice } from './inventorySlice';
 import { createCombatSlice, CombatSlice } from './combatSlice';
 import { createQuestSlice, QuestSlice } from './questSlice';
+import { createEconomySlice, EconomySlice } from './economySlice';
 
-export type GameStore = PlayerSlice & WorldSlice & InventorySlice & CombatSlice & QuestSlice;
+export type GameStore = PlayerSlice & WorldSlice & InventorySlice & CombatSlice & QuestSlice & EconomySlice;
 
 export const useGameStore = create<GameStore>()((...a) => ({
   ...createPlayerSlice(...a),
@@ -14,6 +15,7 @@ export const useGameStore = create<GameStore>()((...a) => ({
   ...createInventorySlice(...a),
   ...createCombatSlice(...a),
   ...createQuestSlice(...a),
+  ...createEconomySlice(...a),
 }));
 
 // === TARGETED SELECTORS ===
@@ -75,4 +77,14 @@ export const useQuestState = () => useGameStore(useShallow(s => ({
 export const useSideQuestState = () => useGameStore(useShallow(s => ({
   sideQuestRegistry: s.sideQuestRegistry,
   regionalRep: s.regionalRep,
+})));
+
+export const useEconomyState = () => useGameStore(useShallow(s => ({
+  wallet: s.wallet,
+  cargo: s.cargo,
+  stealth: s.stealth,
+})));
+
+export const useWantedState = () => useGameStore(useShallow(s => ({
+  wantedHeat: s.wantedHeat,
 })));
