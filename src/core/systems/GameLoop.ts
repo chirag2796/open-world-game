@@ -19,6 +19,7 @@ export class GameLoop {
   // External dependencies
   private map: TileMapData | null = null;
   private npcs: NPC[] = [];
+  private gameHour = 8; // default 8 AM
 
   // Callbacks
   private onTick: (() => void) | null = null;
@@ -47,6 +48,10 @@ export class GameLoop {
 
   setInputDirection(dir: Direction | null) {
     this.inputDir = dir;
+  }
+
+  setGameHour(hour: number) {
+    this.gameHour = hour;
   }
 
   setOnTick(cb: () => void) {
@@ -95,6 +100,7 @@ export class GameLoop {
       map: this.map,
       npcs: this.npcs,
       inputDir: this.inputDir,
+      gameHour: this.gameHour,
     };
 
     for (const system of this.systems) {

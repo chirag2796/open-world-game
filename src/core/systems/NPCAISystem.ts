@@ -1,5 +1,5 @@
 import { System, Entity } from '../ecs/types';
-import { Direction, SOLID_TILES } from '../../types';
+import { Direction, SOLID_TILES, ScheduleEntry } from '../../types';
 import { SCALED_TILE } from '../../engine/constants';
 
 const DIRECTIONS: Direction[] = ['up', 'down', 'left', 'right'];
@@ -9,6 +9,17 @@ function canNPCMoveTo(px: number, py: number, map: { width: number; height: numb
   const ty = Math.floor(py / SCALED_TILE);
   if (tx < 0 || tx >= map.width || ty < 0 || ty >= map.height) return false;
   return !SOLID_TILES.has(map.ground[ty][tx]);
+}
+
+function getActiveSchedule(schedule: ScheduleEntry[], hour: number): ScheduleEntry | undefined {
+  for (const entry of schedule) {
+    if (entry.startHour <= entry.endHour) {
+      if (hour >= entry.startHour && hour < entry.endHour) return entry;
+    } else {
+      if (hour >= entry.startHour || hour < entry.endHour) return entry;
+    }
+  }
+  return undefined;
 }
 
 let frameCounter = 0;
@@ -23,9 +34,33 @@ export const NPCAISystem: System = (entities, ctx) => {
     if (id === 'player' || !entity.npc) continue;
     const npc = entity.npc;
 
-    if (npc.behavior === 'stationary') continue;
+    // Handle scheduled NPCs
+    if (npc.schedule && npc.behavior === 'scheduled') {
+      const entry = getActiveSchedule(npc.schedule, ctx.gameHour);
+      if (entry) {
+        const targetX = entry.position.x * SCALED_TILE;
+        const targetY = entry.position.y * SCALED_TILE;
+        if (npc.originX !== targetX || npc.originY !== targetY) {
+          npc.originX = targetX;
+          npc.originY = targetY;
+          const dist = Math.sqrt(
+            Math.pow(entity.position.x - targetX, 2) +
+            Math.pow(entity.position.y - targetY, 2)
+          );
+          if (dist > SCALED_TILE * 5) {
+            entity.position.x = targetX;
+            entity.position.y = targetY;
+          }
+        }
+        npc.activeBehavior = entry.behavior;
+      }
+    }
 
-    if (npc.behavior === 'guard') {
+    const activeBehavior = npc.activeBehavior;
+
+    if (activeBehavior === 'stationary') continue;
+
+    if (activeBehavior === 'guard') {
       const dx = playerPx - entity.position.x;
       const dy = playerPy - entity.position.y;
       const dist = Math.sqrt(dx * dx + dy * dy);

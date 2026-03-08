@@ -788,86 +788,124 @@ export const PLAYER_START = { x: 104, y: 64 };
 
 // === NPCs ===
 
-export const WORLD_NPCS: NPC[] = [
+// Hand-crafted story NPCs with social identities
+const STORY_NPCS: NPC[] = [
   {
     id: 'delhi-advisor', name: 'Vizier Mirza',
     position: { x: 108, y: 60 }, direction: 'down', behavior: 'guard',
     dialog: ['Welcome to Shahjahanabad, traveler!', 'You stand in the heart of the Mughal Empire.', 'The Emperor has built this magnificent city...', 'Explore the bazaars, visit the mosques, and beware the palace guards!', 'If you seek adventure, head south to the Deccan or west to Rajputana.'],
+    dialogTreeId: 'official_intro',
     settlement: 'Shahjahanabad',
+    social: { title: 'Vizier', socialClass: 'noble', zatRank: 5000, faction: 'Mughal Court' },
   },
   {
     id: 'delhi-merchant', name: 'Merchant Fatima',
-    position: { x: 100, y: 58 }, direction: 'right', behavior: 'wander', wanderRadius: 3,
+    position: { x: 100, y: 58 }, direction: 'right', behavior: 'scheduled', wanderRadius: 3,
     dialog: ['The finest silks and spices from across Hindustan!', 'You look like you could use some supplies.', 'The road ahead is long and full of danger.'],
+    dialogTreeId: 'trader_intro',
     settlement: 'Shahjahanabad',
+    social: { title: 'Trader', socialClass: 'merchant' },
+    schedule: [
+      { startHour: 7, endHour: 18, position: { x: 100, y: 58 }, behavior: 'wander', dialog: 'Welcome! Browse my wares.' },
+      { startHour: 18, endHour: 7, position: { x: 103, y: 60 }, behavior: 'stationary', dialog: 'The bazaar is closed. Come back tomorrow.' },
+    ],
   },
   {
     id: 'agra-merchant', name: 'Merchant Ratan',
     position: { x: 120, y: 76 }, direction: 'left', behavior: 'wander', wanderRadius: 4,
     dialog: ['Ah, you have come to Agra!', 'The grand monument stands nearby.', 'I sell the finest silks from Bengal and spices from Kerala.'],
+    dialogTreeId: 'trader_intro',
     settlement: 'Agra',
+    social: { title: 'Trader', socialClass: 'merchant' },
   },
   {
     id: 'jaipur-guard', name: 'Rajput Vikram',
     position: { x: 76, y: 88 }, direction: 'right', behavior: 'guard',
     dialog: ['Halt! You enter Amber, seat of the Rajput kings.', 'We Rajputs have defended this land for centuries.', 'The desert holds many secrets... and many dangers.'],
+    dialogTreeId: 'guard_intro',
     settlement: 'Amber',
+    social: { title: 'Risaldar', socialClass: 'soldier', zatRank: 200, faction: 'Rajput Alliance' },
   },
   {
     id: 'varanasi-scholar', name: 'Pandit Sharma',
     position: { x: 148, y: 88 }, direction: 'down', behavior: 'stationary',
     dialog: ['Namaste! Welcome to Kashi, the eternal city.', 'This is the holiest of places on the Ganga.', 'Scholars from across the land come here to learn.'],
+    dialogTreeId: 'sage_intro',
     settlement: 'Varanasi',
+    social: { title: 'Pandit', socialClass: 'priest' },
   },
   {
     id: 'lucknow-poet', name: 'Poet Wajid',
     position: { x: 130, y: 82 }, direction: 'left', behavior: 'wander', wanderRadius: 3,
     dialog: ['Ah, the city of nawabs and poetry!', 'In Lucknow, even the stones speak in verse.', 'Have you heard the tale of the phantom of the fort?'],
     settlement: 'Lucknow',
+    social: { title: 'Danishmand', socialClass: 'scholar' },
   },
   {
     id: 'guwahati-sage', name: 'Sage Bhupen',
     position: { x: 216, y: 112 }, direction: 'down', behavior: 'stationary',
     dialog: ['You have traveled far to reach Assam, friend.', 'The Brahmaputra is our lifeline.', 'The hills of the northeast hide ancient kingdoms.'],
+    dialogTreeId: 'sage_intro',
     settlement: 'Guwahati',
+    social: { title: 'Sant', socialClass: 'priest' },
   },
   {
     id: 'hampi-priest', name: 'Priest Vidyaranya',
     position: { x: 84, y: 240 }, direction: 'down', behavior: 'stationary',
     dialog: ['Welcome to Hampi, jewel of the Vijayanagara Empire!', 'These temples were built by great kings.', 'Seek the ruins... they hold treasures of a lost age.'],
+    dialogTreeId: 'sage_intro',
     settlement: 'Hampi',
+    social: { title: 'Pandit', socialClass: 'priest' },
   },
   {
     id: 'kozhikode-trader', name: 'Trader Ibrahim',
     position: { x: 92, y: 292 }, direction: 'right', behavior: 'wander', wanderRadius: 4,
     dialog: ['Ahlan! Welcome to Kozhikode, the spice coast!', 'Ships come from Arabia, Persia, and even Cathay.', 'Pepper, cardamom, cinnamon... Kerala has it all.'],
+    dialogTreeId: 'trader_intro',
     settlement: 'Kozhikode',
+    social: { title: 'Caravan Master', socialClass: 'merchant' },
   },
   {
     id: 'mumbai-captain', name: 'Captain Raje',
     position: { x: 58, y: 198 }, direction: 'down', behavior: 'guard',
     dialog: ['This is the port of Mumbai, gateway to the west.', 'Ships from Portugal dock here daily.', 'The Marathas control these waters now.'],
     settlement: 'Mumbai',
+    social: { title: 'Qiladar', socialClass: 'soldier', zatRank: 500, faction: 'Maratha Confederacy' },
   },
   {
     id: 'madurai-priestess', name: 'Priestess Meenakshi',
     position: { x: 116, y: 300 }, direction: 'down', behavior: 'stationary',
     dialog: ['Blessings upon you, traveler from the north.', 'The great Meenakshi temple watches over this city.', 'Seek the shore temples if you wish to see our heritage.'],
+    dialogTreeId: 'sage_intro',
     settlement: 'Madurai',
+    social: { title: 'Swami', socialClass: 'priest' },
   },
   {
     id: 'jodhpur-warrior', name: 'Warrior Rao',
     position: { x: 54, y: 102 }, direction: 'right', behavior: 'wander', wanderRadius: 3,
     dialog: ['The Blue City welcomes you, stranger.', 'In these deserts, water is more precious than gold.', 'Beware the sand scorpions!'],
+    dialogTreeId: 'guard_intro',
     settlement: 'Jodhpur',
+    social: { title: 'Sipahi', socialClass: 'soldier', zatRank: 100 },
   },
   {
     id: 'bhopal-alchemist', name: 'Alchemist Hakim',
     position: { x: 102, y: 118 }, direction: 'left', behavior: 'wander', wanderRadius: 2,
     dialog: ['I study the ancient sciences of healing...', 'The forests of Madhya Pradesh are full of rare herbs.', 'Bring me ingredients and I can brew powerful remedies.'],
     settlement: 'Bhopal',
+    social: { title: 'Hakim', socialClass: 'scholar' },
+  },
+  {
+    id: 'delhi-elder', name: 'Village Elder Hari',
+    position: { x: 106, y: 64 }, direction: 'down', behavior: 'stationary',
+    dialog: ['The villages around Delhi need your help.', 'Bandits grow bolder each day.'],
+    dialogTreeId: 'elder_intro',
+    settlement: 'Shahjahanabad',
+    social: { title: 'Zamindar', socialClass: 'noble', zatRank: 100 },
   },
 ];
+
+export const WORLD_NPCS: NPC[] = STORY_NPCS;
 
 // === MINIMAP COLORS ===
 

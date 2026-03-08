@@ -24,9 +24,9 @@ import BattleScreen from '../../components/BattleScreen';
 import WeatherEffect from '../../components/WeatherEffect';
 import DayNightCycle from '../../components/DayNightCycle';
 import { useWeather } from '../../engine/useWeather';
-import { Direction, NPC, BattleAction } from '../../types';
-import { getRandomEnemy, xpForLevel } from '../../data/enemies';
+import { Direction, BattleAction } from '../../types';
 import { getRequiredSanad, getRegionName } from '../../data/regions';
+import { startDialog, advanceDialog, DialogSession } from '../../engine/dialogEngine';
 import BorderCrossingUI from '../../components/BorderCrossingUI';
 
 const WorldScreen: React.FC = () => {
@@ -37,6 +37,7 @@ const WorldScreen: React.FC = () => {
   const entityMgr = useRef(new EntityManager()).current;
   const gameLoop = useRef(new GameLoop()).current;
   const initialized = useRef(false);
+  const dialogSessionRef = useRef<DialogSession | null>(null);
 
   // === STORE (targeted selectors) ===
   const playerPos = useGameStore(s => s.playerPos);
@@ -57,6 +58,7 @@ const WorldScreen: React.FC = () => {
   const slots = useGameStore(s => s.slots);
   const equipped = useGameStore(s => s.equipped);
   const weather = useGameStore(s => s.weather);
+  const gameMinutes = useGameStore(s => s.gameMinutes);
   const borderCrossing = useGameStore(s => s.borderCrossing);
   const currentRegion = useGameStore(s => s.currentRegion);
 
@@ -169,6 +171,11 @@ const WorldScreen: React.FC = () => {
     }
   }, [battleActive, dialog.active, paused]);
 
+  // Sync game hour to game loop for NPC schedules
+  useEffect(() => {
+    gameLoop.setGameHour(Math.floor(gameMinutes / 60));
+  }, [gameMinutes]);
+
   // === WEATHER ===
   const playerTileX = Math.floor(playerPos.x / SCALED_TILE);
   const playerTileY = Math.floor(playerPos.y / SCALED_TILE);
@@ -207,6 +214,39 @@ const WorldScreen: React.FC = () => {
     const state = store.getState();
     if (state.dialog.active) {
       playSFX('npc_talk');
+      // If branching dialog session, advance it
+      if (dialogSessionRef.current) {
+        const result = advanceDialog(
+          dialogSessionRef.current,
+          null, // linear advance (no choice)
+          state.playerKarma,
+          new Set(state.slots.map(s => s.itemId)),
+          state.storyFlags,
+        );
+        // Apply rewards from the node we're leaving
+        if (result.karmaChange) state.adjustKarma(result.karmaChange);
+        if (result.giveItem) state.addItem(result.giveItem, 1);
+        if (result.giveGold) state.addGold(result.giveGold);
+        if (result.setFlag) state.setStoryFlag(result.setFlag);
+
+        if (result.session) {
+          dialogSessionRef.current = result.session;
+          state.setDialog({
+            active: true,
+            npcName: state.dialog.npcName,
+            lines: [result.session.currentNode.text],
+            currentLine: 0,
+            treeId: result.session.tree.id,
+            currentNodeId: result.session.currentNode.id,
+            choices: result.session.availableChoices.length > 0
+              ? result.session.availableChoices : undefined,
+          });
+        } else {
+          dialogSessionRef.current = null;
+          state.closeDialog();
+        }
+        return;
+      }
       state.advanceDialog();
       return;
     }
@@ -223,6 +263,32 @@ const WorldScreen: React.FC = () => {
       const dy = npcTileY - pTileY;
       if (Math.sqrt(dx * dx + dy * dy) < 1.5) {
         playSFX('npc_talk');
+
+        // Try branching dialogue first
+        if (npc.dialogTreeId) {
+          const session = startDialog(
+            npc.dialogTreeId,
+            state.playerKarma,
+            new Set(state.slots.map(s => s.itemId)),
+            state.storyFlags,
+          );
+          if (session) {
+            dialogSessionRef.current = session;
+            state.setDialog({
+              active: true,
+              npcName: npc.name,
+              lines: [session.currentNode.text],
+              currentLine: 0,
+              treeId: session.tree.id,
+              currentNodeId: session.currentNode.id,
+              choices: session.availableChoices.length > 0
+                ? session.availableChoices : undefined,
+            });
+            return;
+          }
+        }
+
+        // Fallback to simple dialog
         state.setDialog({
           active: true,
           npcName: npc.name,
@@ -231,6 +297,42 @@ const WorldScreen: React.FC = () => {
         });
         return;
       }
+    }
+  }, []);
+
+  const handleDialogChoice = useCallback((choiceIndex: number) => {
+    const state = store.getState();
+    if (!dialogSessionRef.current) return;
+
+    playSFX('npc_talk');
+    const result = advanceDialog(
+      dialogSessionRef.current,
+      choiceIndex,
+      state.playerKarma,
+      new Set(state.slots.map(s => s.itemId)),
+      state.storyFlags,
+    );
+
+    if (result.karmaChange) state.adjustKarma(result.karmaChange);
+    if (result.giveItem) state.addItem(result.giveItem, 1);
+    if (result.giveGold) state.addGold(result.giveGold);
+    if (result.setFlag) state.setStoryFlag(result.setFlag);
+
+    if (result.session) {
+      dialogSessionRef.current = result.session;
+      state.setDialog({
+        active: true,
+        npcName: state.dialog.npcName,
+        lines: [result.session.currentNode.text],
+        currentLine: 0,
+        treeId: result.session.tree.id,
+        currentNodeId: result.session.currentNode.id,
+        choices: result.session.availableChoices.length > 0
+          ? result.session.availableChoices : undefined,
+      });
+    } else {
+      dialogSessionRef.current = null;
+      state.closeDialog();
     }
   }, []);
 
@@ -446,7 +548,7 @@ const WorldScreen: React.FC = () => {
         <WeatherEffect weather={currentWeather} />
         <DayNightCycle />
         <MiniMap map={worldMap} playerTileX={playerTileX} playerTileY={playerTileY} />
-        <DialogBox dialog={dialog} onAdvance={handleInteract} />
+        <DialogBox dialog={dialog} onAdvance={handleInteract} onChoice={handleDialogChoice} />
       </View>
 
       <View style={styles.controlsArea}>

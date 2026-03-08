@@ -33,6 +33,8 @@ export class EntityManager {
         originY: npc.position.y * SCALED_TILE,
         walkTimer: 0,
         idleTimer: Math.floor(Math.random() * 60) + 30,
+        schedule: npc.schedule,
+        activeBehavior: npc.behavior === 'scheduled' ? 'stationary' : npc.behavior,
       },
     };
     this.entities.set(npc.id, entity);

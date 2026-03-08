@@ -133,18 +133,80 @@ export interface TileMapData {
   decor: (TileType | -1)[][]; // decoration layer (-1 = empty)
 }
 
-export type NPCBehavior = 'stationary' | 'wander' | 'patrol' | 'guard';
+export type NPCBehavior = 'stationary' | 'wander' | 'patrol' | 'guard' | 'scheduled';
+
+// Mansabdari rank system — historical decimal-based hierarchy
+export type MansabdariZat =
+  | 10 | 20 | 50 | 100 | 200 | 500
+  | 1000 | 2000 | 3000 | 5000 | 7000 | 10000;
+
+export type SocialClass =
+  | 'peasant'       // farmers, laborers
+  | 'artisan'       // craftsmen, builders
+  | 'merchant'      // traders, bankers
+  | 'soldier'       // warriors, guards
+  | 'noble'         // mansabdars, zamindars
+  | 'priest'        // pandits, mullahs, saints
+  | 'scholar'       // hakims, astronomers
+  | 'royal';        // emperors, rajas
+
+export interface SocialIdentity {
+  title: string;           // e.g. "Mansabdar", "Hakim", "Zamindar"
+  socialClass: SocialClass;
+  zatRank?: MansabdariZat; // only for mansabdars/nobles
+  faction?: string;        // e.g. "Mughal Court", "Rajput Alliance"
+}
+
+// Time-based NPC schedule
+export interface ScheduleEntry {
+  startHour: number; // 0-23
+  endHour: number;
+  position: Position;
+  behavior: NPCBehavior;
+  dialog?: string;   // context-specific greeting override
+}
+
+// Branching dialogue with karma effects
+export interface DialogChoice {
+  text: string;
+  karmaEffect: number;       // -10 to +10 per choice
+  nextNodeId: string;
+  requiredKarma?: number;     // min karma to show this option
+  requiredItem?: string;      // item ID needed to show option
+}
+
+export interface DialogNode {
+  id: string;
+  speaker: string;            // NPC name or 'narrator'
+  text: string;
+  choices?: DialogChoice[];   // if absent, auto-advance
+  nextNodeId?: string;        // for linear nodes (no choices)
+  giveItem?: string;          // item ID to give player
+  giveGold?: number;
+  setFlag?: string;           // set a story flag
+  requireFlag?: string;       // only show if flag is set
+}
+
+export interface DialogTree {
+  id: string;
+  startNodeId: string;
+  nodes: Record<string, DialogNode>;
+}
 
 export interface NPC {
   id: string;
   name: string;
   position: Position;
   direction: Direction;
-  dialog: string[];
+  dialog: string[];           // simple dialog (fallback)
+  dialogTreeId?: string;      // branching dialog reference
   settlement: string;
   behavior: NPCBehavior;
   wanderRadius?: number;
   patrolPath?: Position[];
+  social?: SocialIdentity;
+  schedule?: ScheduleEntry[];
+  shopItems?: string[];       // item IDs for merchants
 }
 
 export interface DialogState {
@@ -152,6 +214,10 @@ export interface DialogState {
   npcName: string;
   lines: string[];
   currentLine: number;
+  // Branching dialog state
+  treeId?: string;
+  currentNodeId?: string;
+  choices?: DialogChoice[];
 }
 
 // Inventory system

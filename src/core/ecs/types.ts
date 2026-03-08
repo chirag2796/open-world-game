@@ -1,4 +1,4 @@
-import { Direction, TileMapData, NPC } from '../../types';
+import { Direction, TileMapData, NPC, NPCBehavior, ScheduleEntry } from '../../types';
 
 // Entity-Component-System types for the game loop.
 // Components are plain data. Systems are pure functions that process them.
@@ -30,12 +30,14 @@ export interface CollisionComponent {
 
 export interface NPCComponent {
   npcId: string;
-  behavior: 'stationary' | 'wander' | 'guard' | 'patrol';
+  behavior: NPCBehavior;
   wanderRadius: number;
   originX: number;
   originY: number;
   walkTimer: number;
   idleTimer: number;
+  schedule?: ScheduleEntry[];
+  activeBehavior: NPCBehavior; // current behavior from schedule
 }
 
 // === ENTITY ===
@@ -57,6 +59,7 @@ export interface SystemContext {
   map: TileMapData;     // the world map
   npcs: NPC[];          // NPC definitions
   inputDir: Direction | null; // current D-pad input
+  gameHour: number;     // current game hour (0-23)
 }
 
 // === SYSTEM ===

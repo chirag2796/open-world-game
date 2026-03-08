@@ -22,6 +22,8 @@ export interface PlayerSlice {
   playerXP: number;
   playerLevel: number;
   playerGold: number;
+  playerKarma: number; // -100 (adharma) to +100 (dharma)
+  storyFlags: Set<string>; // persistent story progress flags
 
   // Actions
   setPlayerPos: (pos: Position) => void;
@@ -34,6 +36,9 @@ export interface PlayerSlice {
   damagePlayer: (amount: number) => number; // returns actual damage
   addGold: (amount: number) => void;
   addXP: (amount: number) => boolean; // returns true if leveled up
+  adjustKarma: (amount: number) => void;
+  setStoryFlag: (flag: string) => void;
+  hasStoryFlag: (flag: string) => boolean;
 }
 
 const INITIAL_HP = 50;
@@ -57,6 +62,8 @@ export const createPlayerSlice: StateCreator<PlayerSlice, [], [], PlayerSlice> =
   playerXP: 0,
   playerLevel: 1,
   playerGold: 20,
+  playerKarma: 0,
+  storyFlags: new Set<string>(),
 
   setPlayerPos: (pos) => set({ playerPos: pos }),
   setPlayerDir: (dir) => set({ playerDir: dir }),
@@ -98,5 +105,20 @@ export const createPlayerSlice: StateCreator<PlayerSlice, [], [], PlayerSlice> =
     }
     set({ playerXP: newXP });
     return false;
+  },
+
+  adjustKarma: (amount) => set(state => ({
+    playerKarma: Math.max(-100, Math.min(100, state.playerKarma + amount)),
+  })),
+
+  setStoryFlag: (flag) => set(state => {
+    if (state.storyFlags.has(flag)) return state;
+    const flags = new Set(state.storyFlags);
+    flags.add(flag);
+    return { storyFlags: flags };
+  }),
+
+  hasStoryFlag: (flag) => {
+    return get().storyFlags.has(flag);
   },
 });
