@@ -4,6 +4,7 @@ import { TileMapData } from '../types';
 import { SCALED_TILE, VIEWPORT_TILES_X, VIEWPORT_TILES_Y, GAME_AREA_HEIGHT, SCREEN_WIDTH, TILE_COLORS, TILE_DETAIL } from '../engine/constants';
 import { TILESET } from '../engine/SpriteSheet';
 import { getTileSprite } from '../engine/tileSprites';
+import { getTerrainSprite, TilesetConfig } from '../engine/terrainTilesets';
 
 interface TileRendererProps {
   map: TileMapData;
@@ -76,6 +77,29 @@ const SpriteTile: React.FC<{ col: number; row: number; size: number }> = memo(({
   );
 });
 
+// Terrain tile: renders a frame from the Fan-tasy tilesets (32x32 base, no margin)
+const TerrainTile: React.FC<{ tileset: TilesetConfig; col: number; row: number; size: number }> = memo(({ tileset, col, row, size }) => {
+  const srcX = col * tileset.frameWidth;
+  const srcY = row * tileset.frameHeight;
+  const scale = size / tileset.frameWidth;
+
+  return (
+    <View style={{ width: size, height: size, overflow: 'hidden' }}>
+      <Image
+        source={tileset.source}
+        style={{
+          position: 'absolute',
+          width: tileset.sheetWidth * scale,
+          height: tileset.sheetHeight * scale,
+          left: -srcX * scale,
+          top: -srcY * scale,
+        }}
+        resizeMode="stretch"
+      />
+    </View>
+  );
+});
+
 const TileRenderer: React.FC<TileRendererProps> = ({ map, cameraX, cameraY, useSprites = true }) => {
   const offsetX = cameraX - SCREEN_WIDTH / 2;
   const offsetY = cameraY - GAME_AREA_HEIGHT / 2;
@@ -97,22 +121,47 @@ const TileRenderer: React.FC<TileRendererProps> = ({ map, cameraX, cameraY, useS
         const screenY = y * SCALED_TILE - offsetY;
 
         if (useSprites) {
-          const [col, row] = getTileSprite(tile, x, y, map);
-          result.push(
-            <View
-              key={`${x}-${y}`}
-              style={{
-                position: 'absolute',
-                left: screenX,
-                top: screenY,
-                width: SCALED_TILE,
-                height: SCALED_TILE,
-                backgroundColor: TILE_COLORS[tile] || '#ff00ff',
-              }}
-            >
-              <SpriteTile col={col} row={row} size={SCALED_TILE} />
-            </View>
-          );
+          // Try new Fan-tasy terrain tileset first, fall back to Kenney
+          const terrainRef = getTerrainSprite(tile, x, y, map);
+          if (terrainRef) {
+            result.push(
+              <View
+                key={`${x}-${y}`}
+                style={{
+                  position: 'absolute',
+                  left: screenX,
+                  top: screenY,
+                  width: SCALED_TILE,
+                  height: SCALED_TILE,
+                  backgroundColor: TILE_COLORS[tile] || '#ff00ff',
+                }}
+              >
+                <TerrainTile
+                  tileset={terrainRef.tileset}
+                  col={terrainRef.col}
+                  row={terrainRef.row}
+                  size={SCALED_TILE}
+                />
+              </View>
+            );
+          } else {
+            const [col, row] = getTileSprite(tile, x, y, map);
+            result.push(
+              <View
+                key={`${x}-${y}`}
+                style={{
+                  position: 'absolute',
+                  left: screenX,
+                  top: screenY,
+                  width: SCALED_TILE,
+                  height: SCALED_TILE,
+                  backgroundColor: TILE_COLORS[tile] || '#ff00ff',
+                }}
+              >
+                <SpriteTile col={col} row={row} size={SCALED_TILE} />
+              </View>
+            );
+          }
         } else {
           const detail = TILE_DETAIL[tile];
           result.push(

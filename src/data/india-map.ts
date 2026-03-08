@@ -225,20 +225,96 @@ const STATES: Record<string, StateDef> = {
 
 STATES['d'] = STATES['D'];
 
-// === BIOME → BASE TILE ===
-// Each biome gets ONE primary tile — no random variant noise
-const BIOME_BASE_TILE: Record<BiomeType, TileType> = {
-  ocean: TileType.OCEAN,
-  snow: TileType.SNOW,
-  mountain: TileType.MOUNTAIN,
-  desert: TileType.DESERT,
-  plains: TileType.PLAINS,
-  forest: TileType.FOREST,
-  dense_forest: TileType.DENSE_JUNGLE,
-  plateau: TileType.PLATEAU,
-  wetland: TileType.SWAMP,
-  coastal: TileType.PLAINS,
+// === BIOME → TILE VARIETY ===
+// Each biome uses weighted tile variety for natural-looking terrain
+// Format: [TileType, cumulativeWeight] — weights sum to 1.0
+type WeightedTile = [TileType, number];
+
+const BIOME_VARIETY: Record<BiomeType, WeightedTile[]> = {
+  ocean: [[TileType.OCEAN, 1.0]],
+  snow: [
+    [TileType.SNOW, 0.55],
+    [TileType.ICE, 0.70],
+    [TileType.MOUNTAIN, 0.90],
+    [TileType.CLIFF, 1.0],
+  ],
+  mountain: [
+    [TileType.MOUNTAIN, 0.45],
+    [TileType.ROCKS, 0.65],
+    [TileType.CLIFF, 0.80],
+    [TileType.PLATEAU, 0.90],
+    [TileType.SNOW, 1.0],
+  ],
+  desert: [
+    [TileType.DESERT, 0.55],
+    [TileType.SAND_DUNES, 0.80],
+    [TileType.BEACH, 0.92],
+    [TileType.ROCKS, 1.0],
+  ],
+  plains: [
+    [TileType.PLAINS, 0.50],
+    [TileType.TALL_GRASS, 0.68],
+    [TileType.FLOWERS, 0.78],
+    [TileType.FARM, 0.90],
+    [TileType.GARDEN, 1.0],
+  ],
+  forest: [
+    [TileType.FOREST, 0.45],
+    [TileType.TALL_GRASS, 0.62],
+    [TileType.DENSE_JUNGLE, 0.72],
+    [TileType.TREE_BANYAN, 0.82],
+    [TileType.PLAINS, 0.92],
+    [TileType.FLOWERS, 1.0],
+  ],
+  dense_forest: [
+    [TileType.DENSE_JUNGLE, 0.45],
+    [TileType.FOREST, 0.68],
+    [TileType.TALL_GRASS, 0.80],
+    [TileType.TREE_BANYAN, 0.92],
+    [TileType.SWAMP, 1.0],
+  ],
+  plateau: [
+    [TileType.PLATEAU, 0.45],
+    [TileType.ROCKS, 0.60],
+    [TileType.PLAINS, 0.75],
+    [TileType.MOUNTAIN, 0.85],
+    [TileType.CLIFF, 0.92],
+    [TileType.TALL_GRASS, 1.0],
+  ],
+  wetland: [
+    [TileType.SWAMP, 0.35],
+    [TileType.TALL_GRASS, 0.52],
+    [TileType.PLAINS, 0.65],
+    [TileType.SHALLOW_WATER, 0.78],
+    [TileType.FLOWERS, 0.88],
+    [TileType.LAKE, 1.0],
+  ],
+  coastal: [
+    [TileType.PLAINS, 0.35],
+    [TileType.TALL_GRASS, 0.50],
+    [TileType.FLOWERS, 0.62],
+    [TileType.FARM, 0.74],
+    [TileType.GARDEN, 0.84],
+    [TileType.TREE_PALM, 1.0],
+  ],
 };
+
+// Smooth noise: use coarse grid hash for larger-scale patches (4x4 tile regions)
+// This prevents single-tile noise and creates natural clusters
+function pickBiomeTileSmooth(biome: BiomeType, x: number, y: number): TileType {
+  // Mix fine and coarse hash for natural clustering
+  const coarseX = Math.floor(x / 4);
+  const coarseY = Math.floor(y / 4);
+  const coarseH = hash(coarseX * 17, coarseY * 31);
+  const fineH = hash(x, y);
+  // 70% coarse influence for clustering, 30% fine for edge variety
+  const blended = coarseH * 0.7 + fineH * 0.3;
+  const variants = BIOME_VARIETY[biome];
+  for (const [tile, threshold] of variants) {
+    if (blended < threshold) return tile;
+  }
+  return variants[variants.length - 1][0];
+}
 
 // === RIVERS ===
 const RIVERS: number[][][] = [
@@ -624,7 +700,7 @@ export function generateIndiaMap(): TileMapData {
     Array.from({ length: MAP_W }, () => TileType.OCEAN)
   );
 
-  // 1. Fill base terrain from template (one tile per biome — no noise)
+  // 1. Fill base terrain from template with biome-specific variety
   for (let ty = 0; ty < 50; ty++) {
     const row = TEMPLATE[ty];
     if (!row) continue;
@@ -638,13 +714,12 @@ export function generateIndiaMap(): TileMapData {
         if (!state) continue;
         biome = state.biome;
       }
-      const baseTile = BIOME_BASE_TILE[biome];
       for (let dy = 0; dy < UPSCALE; dy++) {
         for (let dx = 0; dx < UPSCALE; dx++) {
           const px = tx * UPSCALE + dx;
           const py = ty * UPSCALE + dy;
           if (px < MAP_W && py < MAP_H) {
-            ground[py][px] = baseTile;
+            ground[py][px] = pickBiomeTileSmooth(biome, px, py);
           }
         }
       }
@@ -666,23 +741,7 @@ export function generateIndiaMap(): TileMapData {
     placeStructureCentered(ground, placement.structure, placement.x, placement.y, MAP_W, MAP_H);
   }
 
-  // 5. Add scattered tall grass in plains regions (light texture, not noise)
-  for (let y = 0; y < MAP_H; y += 4) {
-    for (let x = 0; x < MAP_W; x += 4) {
-      if (ground[y][x] === TileType.PLAINS && hash(x * 3, y * 7) < 0.12) {
-        // Small 2x2 tall grass patch
-        for (let dy = 0; dy < 2; dy++) {
-          for (let dx = 0; dx < 2; dx++) {
-            if (ground[y + dy]?.[x + dx] === TileType.PLAINS) {
-              ground[y + dy][x + dx] = TileType.TALL_GRASS;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // 6. Settlements
+  // 5. Settlements
   const settlements = getAllSettlements();
   for (const { settlement, biome } of settlements) {
     placeSettlement(ground, settlement, biome);

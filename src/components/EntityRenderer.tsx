@@ -3,6 +3,10 @@ import { View, Text, Image, StyleSheet, ImageSourcePropType } from 'react-native
 import { Position, Direction } from '../types';
 import { SCALED_TILE, GAME_AREA_HEIGHT, SCREEN_WIDTH, PALETTE } from '../engine/constants';
 
+// Characters render larger than tiles for better visibility
+const CHAR_SIZE = 64;
+const CHAR_OFFSET = (CHAR_SIZE - SCALED_TILE) / 2; // center on tile
+
 // ─── Puny Characters Sprite Sheet Layout ─────────────────────
 // Each sheet: 768x256, 32x32 frames, 24 cols × 8 rows
 // Per row: cols 0-7 = down, cols 8-15 = side, cols 16-23 = up
@@ -210,8 +214,8 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
           key={entity.id}
           style={{
             position: 'absolute',
-            left: entity.screenX,
-            top: entity.screenY,
+            left: entity.screenX - CHAR_OFFSET,
+            top: entity.screenY - CHAR_OFFSET,
             zIndex: entity.zIndex + 100,
           }}
         >
@@ -219,7 +223,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
             sheetSource={getSheet(entity.id)}
             direction={entity.dir}
             isMoving={entity.isMoving}
-            size={SCALED_TILE}
+            size={CHAR_SIZE}
             animFrame={entity.animFrame}
           />
           {entity.name && (
@@ -236,14 +240,14 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
 const styles = StyleSheet.create({
   nameTag: {
     position: 'absolute',
-    top: -14,
-    left: -16,
-    right: -16,
+    top: -16,
+    left: -12,
+    right: -12,
     alignItems: 'center',
   },
   nameText: {
     color: PALETTE.white,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 'bold',
     textAlign: 'center',
     textShadowColor: PALETTE.black,
