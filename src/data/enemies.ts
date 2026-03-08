@@ -172,6 +172,37 @@ export const ENEMIES: EnemyDef[] = [
     creatureType: 'naga',
     moves: ['serpent_strike', 'mystic_coil', 'venom_spray', 'constrict'],
   },
+  // === BOSS / STORY ENEMIES ===
+  {
+    id: 'bandit_leader',
+    name: 'Bandit Leader',
+    hp: 35, attack: 9, defense: 4, speed: 6,
+    xpReward: 25, goldReward: 20,
+    biomes: ['plains'],
+    bodyColor: '#704040', headColor: '#502020', description: 'The ruthless leader of the dig site bandits.',
+    creatureType: 'soldier',
+    moves: ['sword_slash', 'shield_bash', 'war_cry'],
+  },
+  {
+    id: 'corrupted_asura',
+    name: 'Corrupted Asura',
+    hp: 120, attack: 22, defense: 10, speed: 8,
+    xpReward: 200, goldReward: 300,
+    biomes: ['plateau'],
+    bodyColor: '#600040', headColor: '#400020', description: 'An ancient Asura bound by dark mantras within Agra Fort.',
+    creatureType: 'mythic',
+    moves: ['divine_light', 'mantra_blast', 'astral_strike', 'spirit_heal'],
+  },
+  {
+    id: 'cosmic_asura',
+    name: 'Source of Imbalance',
+    hp: 180, attack: 28, defense: 14, speed: 10,
+    xpReward: 500, goldReward: 500,
+    biomes: ['plains'],
+    bodyColor: '#200040', headColor: '#100020', description: 'The manifestation of the Cosmic Imbalance itself.',
+    creatureType: 'mythic',
+    moves: ['astral_strike', 'divine_light', 'mantra_blast', 'spirit_heal'],
+  },
 ];
 
 // Get random enemy for a biome, scaled by player level

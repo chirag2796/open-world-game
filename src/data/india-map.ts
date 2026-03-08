@@ -113,7 +113,7 @@ const STATES: Record<string, StateDef> = {
     { name: 'Varanasi', type: 'city', tileX: 144, tileY: 88 },
     { name: 'Lucknow', type: 'city', tileX: 128, tileY: 80 },
     { name: 'Ayodhya', type: 'village', tileX: 136, tileY: 84 },
-    { name: 'Mathura', type: 'village', tileX: 112, tileY: 72 },
+    { name: 'Mathura', type: 'village', tileX: 100, tileY: 72 },
     { name: 'Allahabad', type: 'village', tileX: 140, tileY: 82 },
   ]},
   b: { code: 'b', name: 'Bihar', biome: 'plains', settlements: [
@@ -784,7 +784,8 @@ export function getBiomeAt(tileX: number, tileY: number): BiomeType {
   return STATES[code]?.biome || 'plains';
 }
 
-export const PLAYER_START = { x: 104, y: 64 };
+// Player starts in Mathura, UP — the starting village for the Hero's Journey
+export const PLAYER_START = { x: 100, y: 72 };
 
 // === NPCs ===
 
@@ -793,8 +794,8 @@ const STORY_NPCS: NPC[] = [
   {
     id: 'delhi-advisor', name: 'Vizier Mirza',
     position: { x: 108, y: 60 }, direction: 'down', behavior: 'guard',
-    dialog: ['Welcome to Shahjahanabad, traveler!', 'You stand in the heart of the Mughal Empire.', 'The Emperor has built this magnificent city...', 'Explore the bazaars, visit the mosques, and beware the palace guards!', 'If you seek adventure, head south to the Deccan or west to Rajputana.'],
-    dialogTreeId: 'official_intro',
+    dialog: ['Welcome to Shahjahanabad, traveler!', 'You stand in the heart of the Mughal Empire.'],
+    dialogTreeId: 'quest_vizier_mission',
     settlement: 'Shahjahanabad',
     social: { title: 'Vizier', socialClass: 'noble', zatRank: 5000, faction: 'Mughal Court' },
   },
@@ -813,16 +814,16 @@ const STORY_NPCS: NPC[] = [
   {
     id: 'agra-merchant', name: 'Merchant Ratan',
     position: { x: 120, y: 76 }, direction: 'left', behavior: 'wander', wanderRadius: 4,
-    dialog: ['Ah, you have come to Agra!', 'The grand monument stands nearby.', 'I sell the finest silks from Bengal and spices from Kerala.'],
-    dialogTreeId: 'trader_intro',
+    dialog: ['Ah, you have come to Agra!', 'The grand monument stands nearby.'],
+    dialogTreeId: 'quest_agra_merchant',
     settlement: 'Agra',
     social: { title: 'Trader', socialClass: 'merchant' },
   },
   {
     id: 'jaipur-guard', name: 'Rajput Vikram',
     position: { x: 76, y: 88 }, direction: 'right', behavior: 'guard',
-    dialog: ['Halt! You enter Amber, seat of the Rajput kings.', 'We Rajputs have defended this land for centuries.', 'The desert holds many secrets... and many dangers.'],
-    dialogTreeId: 'guard_intro',
+    dialog: ['Halt! You enter Amber, seat of the Rajput kings.', 'We Rajputs have defended this land for centuries.'],
+    dialogTreeId: 'quest_rajput_alliance',
     settlement: 'Amber',
     social: { title: 'Risaldar', socialClass: 'soldier', zatRank: 200, faction: 'Rajput Alliance' },
   },
@@ -902,6 +903,37 @@ const STORY_NPCS: NPC[] = [
     dialogTreeId: 'elder_intro',
     settlement: 'Shahjahanabad',
     social: { title: 'Zamindar', socialClass: 'noble', zatRank: 100 },
+  },
+  // === QUEST NPCs ===
+  {
+    id: 'mathura-elder', name: 'Elder Devrath',
+    position: { x: 101, y: 72 }, direction: 'down', behavior: 'stationary',
+    dialog: ['Welcome, child. Speak with me when you are ready.', 'These are troubled times for our village.'],
+    dialogTreeId: 'quest_elder_start',
+    settlement: 'Mathura',
+    social: { title: 'Zamindar', socialClass: 'noble', zatRank: 50 },
+  },
+  {
+    id: 'mathura-mentor', name: 'Guru Arjun',
+    position: { x: 103, y: 74 }, direction: 'left', behavior: 'stationary',
+    dialog: ['I sit here beneath the banyan, waiting.', 'Come back when you have found what you seek.'],
+    dialogTreeId: 'quest_mentor_intro',
+    settlement: 'Mathura',
+    social: { title: 'Mansabdar', socialClass: 'noble', zatRank: 2000, faction: 'Retired' },
+  },
+  {
+    id: 'mathura-villager1', name: 'Farmer Gopal',
+    position: { x: 99, y: 71 }, direction: 'right', behavior: 'wander', wanderRadius: 2,
+    dialog: ['The construction workers found something strange south of here.', 'I do not like it... bad omens.'],
+    settlement: 'Mathura',
+    social: { title: 'Farmer', socialClass: 'peasant' },
+  },
+  {
+    id: 'mathura-villager2', name: 'Kamla',
+    position: { x: 98, y: 73 }, direction: 'down', behavior: 'wander', wanderRadius: 3,
+    dialog: ['Be careful if you go south.', 'I heard bandits have been lurking near the dig site.'],
+    settlement: 'Mathura',
+    social: { title: 'Weaver', socialClass: 'artisan' },
   },
 ];
 

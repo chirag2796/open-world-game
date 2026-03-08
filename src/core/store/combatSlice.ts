@@ -1,6 +1,6 @@
 import { StateCreator } from 'zustand';
 import { BattleAction, BattleState, CombatStackState, EnemyDef, BiomeType, CombatMove } from '../../types';
-import { getRandomEnemy } from '../../data/enemies';
+import { getRandomEnemy, ENEMIES } from '../../data/enemies';
 import { MOVES, DEFAULT_PLAYER_MOVES } from '../../data/combatMoves';
 import {
   calculateDamage, calculateTurnOrder, pickEnemyMove,
@@ -13,6 +13,7 @@ export interface CombatSlice {
 
   // Actions
   startBattle: (biome: BiomeType, playerLevel: number, atk: number, def: number, hp: number, maxHP: number, xp: number, gold: number, speed: number) => void;
+  startBattleWith: (enemyId: string, playerLevel: number, atk: number, def: number, hp: number, maxHP: number, xp: number, gold: number) => void;
   endBattle: () => void;
   setBattle: (partial: Partial<BattleState>) => void;
 
@@ -82,6 +83,35 @@ export const createCombatSlice: StateCreator<CombatSlice, [], [], CombatSlice> =
       },
     });
     // Transition to select after intro
+    setTimeout(() => {
+      const { battle } = get();
+      if (battle.phase === 'intro') {
+        set({ battle: { ...get().battle, phase: 'select' } });
+      }
+    }, 1200);
+  },
+
+  startBattleWith: (enemyId, playerLevel, atk, def, hp, maxHP, xp, gold) => {
+    const enemy = ENEMIES.find(e => e.id === enemyId);
+    if (!enemy) return;
+    set({
+      battle: {
+        ...INITIAL_BATTLE,
+        active: true,
+        enemy,
+        enemyHP: enemy.hp,
+        playerHP: hp,
+        playerMaxHP: maxHP,
+        playerATK: atk,
+        playerDEF: def,
+        playerXP: xp,
+        playerLevel: playerLevel,
+        playerGold: gold,
+        phase: 'intro',
+        message: `${enemy.name} attacks!`,
+        combatLog: [`${enemy.name} attacks!`],
+      },
+    });
     setTimeout(() => {
       const { battle } = get();
       if (battle.phase === 'intro') {

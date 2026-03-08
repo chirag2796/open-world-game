@@ -81,8 +81,8 @@ export interface WorldSlice {
   isRegionUnlocked: (code: string) => boolean;
 }
 
-// Starting region (Delhi) + neighboring regions unlocked by default
-const STARTING_REGIONS = new Set(['D', 'd', 'y', 'l']);
+// Starting region — all Heartland codes unlocked by default
+const STARTING_REGIONS = new Set(['D', 'd', 'y', 'l', 'p']);
 
 export const createWorldSlice: StateCreator<WorldSlice, [], [], WorldSlice> = (set, get) => ({
   mapReady: false,

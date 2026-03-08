@@ -28,6 +28,7 @@ import { getRequiredSanad, getRegionName } from '../../data/regions';
 import { startDialog, advanceDialog, DialogSession } from '../../engine/dialogEngine';
 import { pickEnemyMove } from '../../engine/combatEngine';
 import BorderCrossingUI from '../../components/BorderCrossingUI';
+import JournalScreen from '../../components/JournalScreen';
 
 const WorldScreen: React.FC = () => {
   // === DEV MODE ===
@@ -66,6 +67,12 @@ const WorldScreen: React.FC = () => {
   const gameMinutes = useGameStore(s => s.gameMinutes);
   const borderCrossing = useGameStore(s => s.borderCrossing);
   const currentRegion = useGameStore(s => s.currentRegion);
+  const objectiveText = useGameStore(s => s.getObjectiveText());
+  const activeQuestId = useGameStore(s => s.activeQuestId);
+  const activeStepIndex = useGameStore(s => s.activeStepIndex);
+  const completedQuests = useGameStore(s => s.completedQuests);
+  const questLog = useGameStore(s => s.questLog);
+  const [showJournal, setShowJournal] = useState(false);
 
   // Store actions (stable refs via zustand)
   const store = useGameStore;
@@ -98,7 +105,7 @@ const WorldScreen: React.FC = () => {
     // Sync ECS state → Zustand store every tick
     gameLoop.setOnTick(() => {
       const state = store.getState();
-      if (state.paused || state.dialog.active || state.battle.active) return;
+      if (state.paused || state.dialog.active || state.battle.active || state.borderCrossing?.active) return;
 
       const player = entityMgr.getPlayer();
       if (!player) return;
@@ -111,6 +118,29 @@ const WorldScreen: React.FC = () => {
       const frame = player.sprite.animFrame;
       const cx = cameraX;
       const cy = cameraY;
+
+      // Check region crossing BEFORE updating store (so we don't save a locked position)
+      const tileX = Math.floor(px / SCALED_TILE);
+      const tileY = Math.floor(py / SCALED_TILE);
+      const regionCode = getStateCode(tileX, tileY);
+      if (regionCode && regionCode !== state.currentRegion) {
+        const s = store.getState();
+        if (!DEV_MODE && !s.unlockedRegions.has(regionCode)) {
+          // Blocked — show border crossing UI and push player back
+          const rName = getRegionName(regionCode);
+          s.showBorderCrossing(regionCode, rName);
+          const p = entityMgr.getPlayer();
+          if (p) {
+            p.position.x = state.playerPos.x;
+            p.position.y = state.playerPos.y;
+          }
+          return; // Don't update store with the locked position
+        } else {
+          // Entered new region (or dev mode bypass)
+          s.setCurrentRegion(regionCode);
+          s.discoverRegion(regionCode);
+        }
+      }
 
       const updates: Record<string, unknown> = {};
       let hasChanges = false;
@@ -129,29 +159,6 @@ const WorldScreen: React.FC = () => {
         store.setState(updates);
       }
 
-      // Check region crossing
-      const tileX = Math.floor(px / SCALED_TILE);
-      const tileY = Math.floor(py / SCALED_TILE);
-      const regionCode = getStateCode(tileX, tileY);
-      if (regionCode && regionCode !== state.currentRegion) {
-        const s = store.getState();
-        if (!DEV_MODE && !s.unlockedRegions.has(regionCode)) {
-          // Blocked — show border crossing UI
-          const rName = getRegionName(regionCode);
-          s.showBorderCrossing(regionCode, rName);
-          // Push player back
-          const player = entityMgr.getPlayer();
-          if (player) {
-            player.position.x = state.playerPos.x;
-            player.position.y = state.playerPos.y;
-          }
-        } else {
-          // Entered new region (or dev mode bypass)
-          s.setCurrentRegion(regionCode);
-          s.discoverRegion(regionCode);
-        }
-      }
-
       // Check encounters (skip in dev mode)
       if (!DEV_MODE && consumeEncounter()) {
         const biome = getBiomeAt(tileX, tileY);
@@ -162,6 +169,57 @@ const WorldScreen: React.FC = () => {
         const def = 2 + equippedStats.defense + Math.floor(lvl * 0.5);
         playSFX('battle_start');
         s2.startBattle(biome, lvl, atk, def, s2.playerHP, s2.playerMaxHP, s2.playerXP, s2.playerGold, 10);
+      }
+
+      // Check quest triggers
+      const qs = store.getState();
+      const questResult = qs.checkQuestTriggers({
+        playerTileX: tileX,
+        playerTileY: tileY,
+        storyFlags: qs.storyFlags,
+        items: new Set(qs.slots.map(s => s.itemId)),
+      });
+      if (questResult.triggered) {
+        const oc = questResult.onComplete;
+        if (oc) {
+          if (oc.setFlags) oc.setFlags.forEach(f => qs.setStoryFlag(f));
+          if (oc.giveItems) oc.giveItems.forEach(i => qs.addItem(i.itemId, i.quantity));
+          if (oc.giveGold) qs.addGold(oc.giveGold);
+          if (oc.unlockRegions) oc.unlockRegions.forEach(r => qs.unlockRegion(r));
+          if (oc.message) qs.addQuestLog(oc.message);
+          if (oc.startBattleWithEnemy) {
+            // Auto-start a scripted battle
+            const s3 = store.getState();
+            const equippedStats = s3.getEquippedStats();
+            const lvl = s3.playerLevel;
+            const atk = 5 + equippedStats.attack + Math.floor(lvl * 1.5);
+            const def = 2 + equippedStats.defense + Math.floor(lvl * 0.5);
+            playSFX('battle_start');
+            s3.startBattleWith(oc.startBattleWithEnemy, lvl, atk, def, s3.playerHP, s3.playerMaxHP, s3.playerXP, s3.playerGold);
+          } else if (oc.dialogTreeId) {
+            // Auto-start a dialog tree
+            const session = startDialog(
+              oc.dialogTreeId,
+              qs.playerKarma,
+              new Set(qs.slots.map(s => s.itemId)),
+              qs.storyFlags,
+            );
+            if (session) {
+              dialogSessionRef.current = session;
+              qs.setDialog({
+                active: true,
+                npcName: session.currentNode.speaker,
+                lines: [session.currentNode.text],
+                currentLine: 0,
+                treeId: session.tree.id,
+                currentNodeId: session.currentNode.id,
+                choices: session.availableChoices.length > 0
+                  ? session.availableChoices : undefined,
+              });
+            }
+          }
+        }
+        qs.advanceQuestStep();
       }
     });
 
@@ -250,6 +308,11 @@ const WorldScreen: React.FC = () => {
               ? result.session.availableChoices : undefined,
           });
         } else {
+          // Dialog tree completed — set completion flag for quest triggers
+          const treeId = state.dialog.treeId;
+          if (treeId) state.setStoryFlag(`dialog_completed_${treeId}`);
+          // Also set talwar_choice_made flag if relevant
+          if (treeId === 'quest_talwar_choice') state.setStoryFlag('talwar_choice_made');
           dialogSessionRef.current = null;
           state.closeDialog();
         }
@@ -339,6 +402,10 @@ const WorldScreen: React.FC = () => {
           ? result.session.availableChoices : undefined,
       });
     } else {
+      // Dialog tree completed — set completion flag for quest triggers
+      const treeId = state.dialog.treeId;
+      if (treeId) state.setStoryFlag(`dialog_completed_${treeId}`);
+      if (treeId === 'quest_talwar_choice') state.setStoryFlag('talwar_choice_made');
       dialogSessionRef.current = null;
       state.closeDialog();
     }
@@ -410,6 +477,31 @@ const WorldScreen: React.FC = () => {
         state.addItem('healing_herb', 1);
       }
       playSFX('victory');
+
+      // Quest: track battle wins
+      state.incrementBattleWins(state.currentRegion);
+      // Set first_combat_won flag (for stage 2)
+      if (!state.storyFlags.has('first_combat_won')) {
+        state.setStoryFlag('first_combat_won');
+      }
+      // Training wins tracking (stage 4)
+      if (state.storyFlags.has('mentor_training_start') && !state.storyFlags.has('training_wins_3')) {
+        if (state.battleWinCount >= 3) {
+          state.setStoryFlag('training_wins_3');
+        }
+      }
+      // Rajasthan wins tracking (stage 6)
+      if (state.storyFlags.has('rajput_contact') && !state.storyFlags.has('rajasthan_wins_5')) {
+        const rWins = (state.regionBattleWins['r'] || 0) + (state.regionBattleWins['g'] || 0);
+        if (rWins >= 5) {
+          state.setStoryFlag('rajasthan_wins_5');
+        }
+      }
+      // Boss victory flags
+      if (enemy) {
+        if (enemy.id === 'corrupted_asura') state.setStoryFlag('asura_defeated');
+        if (enemy.id === 'cosmic_asura') state.setStoryFlag('final_boss_defeated');
+      }
     }
     if (b.result === 'lose') {
       state.healPlayer(Math.floor(state.playerMaxHP / 2) - state.playerHP);
@@ -474,6 +566,12 @@ const WorldScreen: React.FC = () => {
         <WeatherEffect weather={currentWeather} />
         <DayNightCycle />
         <MiniMap map={worldMap} playerTileX={playerTileX} playerTileY={playerTileY} />
+        {!dialog.active && !battleActive && objectiveText && (
+          <View style={styles.questHud}>
+            <Text style={styles.questHudLabel}>QUEST</Text>
+            <Text style={styles.questHudText} numberOfLines={2}>{objectiveText}</Text>
+          </View>
+        )}
         <DialogBox dialog={dialog} onAdvance={handleInteract} onChoice={handleDialogChoice} />
       </View>
 
@@ -515,6 +613,16 @@ const WorldScreen: React.FC = () => {
                 </TouchableOpacity>
                 <Text style={styles.buttonLabelText}>BAG</Text>
               </View>
+              <View style={styles.buttonWithLabel}>
+                <TouchableOpacity
+                  style={styles.journalButton}
+                  onPress={() => { playSFX('menu_select'); setShowJournal(true); }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.bagButtonText}>J</Text>
+                </TouchableOpacity>
+                <Text style={styles.buttonLabelText}>LOG</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -536,6 +644,16 @@ const WorldScreen: React.FC = () => {
           inventory={inventoryState}
           onAction={handleBattleAction}
           onClose={handleBattleClose}
+        />
+      )}
+
+      {showJournal && (
+        <JournalScreen
+          activeQuestId={activeQuestId}
+          activeStepIndex={activeStepIndex}
+          completedQuests={completedQuests}
+          questLog={questLog}
+          onClose={() => { playSFX('menu_back'); setShowJournal(false); }}
         />
       )}
 
@@ -607,8 +725,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#4060a0', borderWidth: 3, borderColor: '#6080c0',
     alignItems: 'center', justifyContent: 'center',
   },
+  journalButton: {
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: '#705020', borderWidth: 3, borderColor: '#906830',
+    alignItems: 'center', justifyContent: 'center',
+  },
   bagButtonText: {
     color: PALETTE.white, fontSize: 22, fontWeight: 'bold', fontFamily: 'monospace',
+  },
+  questHud: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+    right: 100,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: PALETTE.yellow,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  questHudLabel: {
+    color: PALETTE.yellow,
+    fontSize: 9,
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+    letterSpacing: 2,
+  },
+  questHudText: {
+    color: PALETTE.white,
+    fontSize: 11,
+    fontFamily: 'monospace',
+    marginTop: 2,
   },
 });
 

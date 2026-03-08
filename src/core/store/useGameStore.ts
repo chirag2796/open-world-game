@@ -4,14 +4,16 @@ import { createPlayerSlice, PlayerSlice } from './playerSlice';
 import { createWorldSlice, WorldSlice } from './worldSlice';
 import { createInventorySlice, InventorySlice } from './inventorySlice';
 import { createCombatSlice, CombatSlice } from './combatSlice';
+import { createQuestSlice, QuestSlice } from './questSlice';
 
-export type GameStore = PlayerSlice & WorldSlice & InventorySlice & CombatSlice;
+export type GameStore = PlayerSlice & WorldSlice & InventorySlice & CombatSlice & QuestSlice;
 
 export const useGameStore = create<GameStore>()((...a) => ({
   ...createPlayerSlice(...a),
   ...createWorldSlice(...a),
   ...createInventorySlice(...a),
   ...createCombatSlice(...a),
+  ...createQuestSlice(...a),
 }));
 
 // === TARGETED SELECTORS ===
@@ -62,4 +64,10 @@ export const useBattleState = () => useGameStore(useShallow(s => ({
 export const useInventoryState = () => useGameStore(useShallow(s => ({
   slots: s.slots,
   equipped: s.equipped,
+})));
+
+export const useQuestState = () => useGameStore(useShallow(s => ({
+  activeQuestId: s.activeQuestId,
+  activeStepIndex: s.activeStepIndex,
+  questLog: s.questLog,
 })));

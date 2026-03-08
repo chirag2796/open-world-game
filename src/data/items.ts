@@ -363,6 +363,49 @@ export const ITEMS: Record<string, ItemDef> = {
     usable: false,
     value: 0,
   },
+  // === QUEST KEY ITEMS ===
+  ancestral_talwar: {
+    id: 'ancestral_talwar',
+    name: 'Ancestral Talwar',
+    category: 'weapons',
+    description: 'An ancient curved blade that hums with ancestral power. It was buried for centuries.',
+    icon: 'AT',
+    stackable: false,
+    usable: false,
+    equipSlot: 'weapon',
+    attack: 18,
+    value: 0,
+  },
+  mentors_ring: {
+    id: 'mentors_ring',
+    name: "Mentor's Ring",
+    category: 'key_items',
+    description: 'A signet ring from Guru Arjun\'s old Mansabdari regiment. Proof of his trust.',
+    icon: 'MR',
+    stackable: false,
+    usable: false,
+    value: 0,
+  },
+  fort_seal: {
+    id: 'fort_seal',
+    name: 'Fort Seal',
+    category: 'key_items',
+    description: 'An official seal granting access to the restricted sections of Agra Fort.',
+    icon: 'FS',
+    stackable: false,
+    usable: false,
+    value: 0,
+  },
+  imperial_decree: {
+    id: 'imperial_decree',
+    name: 'Imperial Decree',
+    category: 'key_items',
+    description: 'A lost decree of the Padshah. Grants immense authority to its bearer.',
+    icon: 'ID',
+    stackable: false,
+    usable: false,
+    value: 0,
+  },
 };
 
 // Starting inventory for new game
@@ -370,5 +413,4 @@ export const STARTING_ITEMS: { itemId: string; quantity: number }[] = [
   { itemId: 'wooden_sword', quantity: 1 },
   { itemId: 'cotton_kurta', quantity: 1 },
   { itemId: 'healing_herb', quantity: 3 },
-  { itemId: 'emperors_letter', quantity: 1 },
 ];

@@ -1,9 +1,12 @@
 import { DialogTree } from '../types';
+import { QUEST_DIALOG_TREES } from './questDialogs';
 
 // Branching dialogue trees with karma effects
 // Convention: node IDs are tree_id + '_' + short label
 
 export const DIALOG_TREES: Record<string, DialogTree> = {
+  // Include all quest dialog trees
+  ...QUEST_DIALOG_TREES,
   // === SPIRITUAL SAGE ===
   sage_intro: {
     id: 'sage_intro',
