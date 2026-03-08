@@ -43,6 +43,33 @@ function createDrop(weather: WeatherType): WeatherDrop {
   };
 }
 
+// Animated fog with breathing opacity pulse
+const FogOverlay: React.FC = memo(() => {
+  const fog1 = useRef(new Animated.Value(0.2)).current;
+  const fog2 = useRef(new Animated.Value(0.12)).current;
+
+  useEffect(() => {
+    const a1 = Animated.loop(Animated.sequence([
+      Animated.timing(fog1, { toValue: 0.3, duration: 4000, useNativeDriver: true }),
+      Animated.timing(fog1, { toValue: 0.18, duration: 3500, useNativeDriver: true }),
+    ]));
+    const a2 = Animated.loop(Animated.sequence([
+      Animated.timing(fog2, { toValue: 0.2, duration: 5000, useNativeDriver: true }),
+      Animated.timing(fog2, { toValue: 0.1, duration: 4000, useNativeDriver: true }),
+    ]));
+    a1.start();
+    a2.start();
+    return () => { a1.stop(); a2.stop(); };
+  }, []);
+
+  return (
+    <View style={styles.fogOverlay} pointerEvents="none">
+      <Animated.View style={[styles.fogLayer1, { opacity: fog1 }]} />
+      <Animated.View style={[styles.fogLayer2, { opacity: fog2 }]} />
+    </View>
+  );
+});
+
 const WeatherEffect: React.FC<WeatherEffectProps> = ({ weather }) => {
   const [drops, setDrops] = useState<WeatherDrop[]>([]);
   const animationsRef = useRef<Animated.CompositeAnimation[]>([]);
@@ -94,14 +121,9 @@ const WeatherEffect: React.FC<WeatherEffectProps> = ({ weather }) => {
 
   if (weather === 'clear') return null;
 
-  // Fog overlay
+  // Fog overlay with breathing pulse
   if (weather === 'fog') {
-    return (
-      <View style={styles.fogOverlay} pointerEvents="none">
-        <View style={styles.fogLayer1} />
-        <View style={styles.fogLayer2} />
-      </View>
-    );
+    return <FogOverlay />;
   }
 
   const isSnow = weather === 'snow';
@@ -169,7 +191,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(200,210,220,0.25)',
+    backgroundColor: 'rgb(200,210,220)',
   },
   fogLayer2: {
     position: 'absolute',
@@ -177,7 +199,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(200,210,220,0.15)',
+    backgroundColor: 'rgb(190,200,215)',
   },
 });
 

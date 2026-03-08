@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Animated } from 'react-native';
 import { SCREEN_WIDTH, GAME_AREA_HEIGHT, PALETTE } from '../engine/constants';
 
 // Day/night cycle: purely visual overlay
@@ -105,23 +105,11 @@ const DayNightCycle: React.FC<DayNightCycleProps> = ({ gameMinutes: externalMinu
         pointerEvents="none"
       />
 
-      {/* Stars overlay during night */}
+      {/* Stars overlay during night — with twinkling */}
       {showStars && (
         <View style={styles.starsContainer} pointerEvents="none">
           {STAR_POSITIONS.map((star, i) => (
-            <View
-              key={i}
-              style={[
-                styles.star,
-                {
-                  left: star.x,
-                  top: star.y,
-                  width: star.size,
-                  height: star.size,
-                  opacity: star.brightness,
-                },
-              ]}
-            />
+            <TwinklingStar key={i} star={star} />
           ))}
         </View>
       )}
@@ -141,12 +129,53 @@ const DayNightCycle: React.FC<DayNightCycleProps> = ({ gameMinutes: externalMinu
   );
 };
 
-// Pre-generated star positions for consistency
-const STAR_POSITIONS = Array.from({ length: 30 }, (_, i) => ({
+// Twinkling star component — uses Animated for gentle opacity pulse
+const TwinklingStar: React.FC<{ star: { x: number; y: number; size: number; brightness: number; twinkleSpeed: number } }> = memo(({ star }) => {
+  const opacity = useRef(new Animated.Value(star.brightness)).current;
+
+  useEffect(() => {
+    const twinkle = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: star.brightness * 0.3,
+          duration: star.twinkleSpeed,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: star.brightness,
+          duration: star.twinkleSpeed,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    // Stagger start
+    const timer = setTimeout(() => twinkle.start(), star.twinkleSpeed * Math.random());
+    return () => { clearTimeout(timer); twinkle.stop(); };
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        styles.star,
+        {
+          left: star.x,
+          top: star.y,
+          width: star.size,
+          height: star.size,
+          opacity,
+        },
+      ]}
+    />
+  );
+});
+
+// Pre-generated star positions — 45 stars with twinkling speeds
+const STAR_POSITIONS = Array.from({ length: 45 }, (_, i) => ({
   x: ((i * 37 + 13) % SCREEN_WIDTH),
-  y: ((i * 23 + 7) % (GAME_AREA_HEIGHT * 0.6)),
+  y: ((i * 23 + 7) % (GAME_AREA_HEIGHT * 0.55)),
   size: 1 + (i % 3),
   brightness: 0.3 + (i % 5) * 0.15,
+  twinkleSpeed: 1500 + (i % 7) * 500, // 1.5-5s per cycle
 }));
 
 const styles = StyleSheet.create({

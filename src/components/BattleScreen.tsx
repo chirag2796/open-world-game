@@ -5,6 +5,7 @@ import { ITEMS } from '../data/items';
 import { MOVES } from '../data/combatMoves';
 import { InventoryState } from '../engine/useInventory';
 import { PALETTE, SCREEN_WIDTH, SCREEN_HEIGHT } from '../engine/constants';
+import { INDO_PALETTE, CREATURE_COLORS } from '../styles/theme';
 import ParticleEffect, { ParticleType } from './ParticleEffect';
 import VFXSprite from './VFXSprite';
 import { VFXAnimDef, MOVE_VFX, ACTION_VFX } from '../engine/vfxSprites';
@@ -37,21 +38,47 @@ interface BattleScreenProps {
 const HPBar: React.FC<{ current: number; max: number; width: number }> = memo(({ current, max, width }) => {
   const ratio = max > 0 ? current / max : 0;
   const color = ratio > 0.5 ? PALETTE.hpGreen : ratio > 0.25 ? PALETTE.hpYellow : PALETTE.hpRed;
+  const animWidth = useRef(new Animated.Value(width * ratio)).current;
+  const shakeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Animate HP change smoothly
+    Animated.timing(animWidth, {
+      toValue: width * ratio,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+    // Shake on damage
+    if (ratio < 1) {
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 3, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -3, duration: 40, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 2, duration: 30, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 30, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [current]);
+
   return (
-    <View style={[styles.hpBarBg, { width }]}>
-      <View style={[styles.hpBarFill, { width: width * ratio, backgroundColor: color }]} />
-    </View>
+    <Animated.View style={[styles.hpBarBg, { width, transform: [{ translateX: shakeAnim }] }]}>
+      <Animated.View style={[styles.hpBarFill, { width: animWidth, backgroundColor: color }]} />
+      {/* Shine highlight */}
+      <View style={styles.hpBarShine} />
+    </Animated.View>
   );
 });
 
 // Old View-based sprites replaced by BattleCharSprite components
 
-// Type badge component
-const TypeBadge: React.FC<{ type: CreatureType }> = memo(({ type }) => (
-  <View style={[styles.typeBadge, { backgroundColor: TYPE_COLORS[type] }]}>
-    <Text style={styles.typeBadgeText}>{TYPE_LABELS[type]}</Text>
-  </View>
-));
+// Type badge component — uses Indo-Saracenic creature colors
+const TypeBadge: React.FC<{ type: CreatureType }> = memo(({ type }) => {
+  const colors = CREATURE_COLORS[type];
+  return (
+    <View style={[styles.typeBadge, { backgroundColor: colors.bg, borderColor: colors.border, borderWidth: 1 }]}>
+      <Text style={[styles.typeBadgeText, { color: colors.text }]}>{TYPE_LABELS[type]}</Text>
+    </View>
+  );
+});
 
 type ActionPanel = 'main' | 'moves' | 'items';
 
@@ -290,14 +317,30 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
     <View style={styles.overlay}>
       {/* Battle scene area */}
       <View style={styles.sceneArea}>
+        {/* Sky layers */}
         <View style={styles.sceneBg} />
         <View style={styles.sceneGradient} />
+        {/* Horizon architectural silhouette */}
+        <View style={styles.horizonLine}>
+          {/* Dome silhouettes */}
+          <View style={styles.silhouetteDome1} />
+          <View style={styles.silhouetteDome2} />
+          <View style={styles.silhouetteMinaret} />
+        </View>
+        {/* Ground with subtle gradient */}
         <View style={styles.groundLine} />
+        <View style={styles.groundHighlight} />
 
         {/* Ground texture dots for visual richness */}
         <View style={styles.groundDots}>
-          {[0.1, 0.25, 0.4, 0.55, 0.7, 0.85].map((pct, i) => (
-            <View key={i} style={[styles.groundDot, { left: `${pct * 100}%`, top: `${20 + (i % 3) * 25}%` }]} />
+          {[0.08, 0.18, 0.32, 0.45, 0.6, 0.72, 0.88].map((pct, i) => (
+            <View key={i} style={[styles.groundDot, {
+              left: `${pct * 100}%`,
+              top: `${15 + (i % 4) * 20}%`,
+              width: 3 + (i % 3),
+              height: 3 + (i % 3),
+              opacity: 0.3 + (i % 3) * 0.15,
+            }]} />
           ))}
         </View>
 
@@ -332,8 +375,12 @@ const BattleScreen: React.FC<BattleScreenProps> = ({
         </View>
       </View>
 
-      {/* Message box */}
+      {/* Message box — Indo-Saracenic frame */}
       <View style={styles.messageBox}>
+        <View style={styles.messageCornerTL} />
+        <View style={styles.messageCornerTR} />
+        <View style={styles.messageCornerBL} />
+        <View style={styles.messageCornerBR} />
         <Text style={styles.messageText}>{battle.message}</Text>
       </View>
 
@@ -389,30 +436,65 @@ const styles = StyleSheet.create({
   sceneBg: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: '40%',
-    backgroundColor: '#0e1a30',
+    backgroundColor: '#0a1428',
   },
   sceneGradient: {
     position: 'absolute',
     left: 0, right: 0, top: '30%', bottom: '40%',
-    backgroundColor: '#1a2840',
+    backgroundColor: '#142038',
+  },
+  horizonLine: {
+    position: 'absolute',
+    left: 0, right: 0, top: '52%', height: 30,
+    zIndex: 2,
+  },
+  silhouetteDome1: {
+    position: 'absolute',
+    left: '15%', bottom: 0,
+    width: 40, height: 24,
+    backgroundColor: '#101820',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  silhouetteDome2: {
+    position: 'absolute',
+    left: '40%', bottom: 0,
+    width: 28, height: 18,
+    backgroundColor: '#0c1418',
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
+  },
+  silhouetteMinaret: {
+    position: 'absolute',
+    left: '55%', bottom: 0,
+    width: 6, height: 28,
+    backgroundColor: '#101820',
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
   },
   groundLine: {
     position: 'absolute',
     left: 0, right: 0, bottom: 0, top: '60%',
     backgroundColor: '#1a2a1a',
-    borderTopWidth: 3,
-    borderTopColor: '#3a5a3a',
+    borderTopWidth: 2,
+    borderTopColor: '#2a4a2a',
+  },
+  groundHighlight: {
+    position: 'absolute',
+    left: 0, right: 0, top: '60%', height: 4,
+    backgroundColor: '#243a24',
+    zIndex: 1,
   },
   groundDots: {
     position: 'absolute',
-    left: 0, right: 0, bottom: 0, top: '60%',
+    left: 0, right: 0, bottom: 0, top: '62%',
     zIndex: 1,
   },
   groundDot: {
     position: 'absolute',
     width: 4,
     height: 4,
-    backgroundColor: '#2a3a2a',
+    backgroundColor: '#1a2a1a',
     borderRadius: 2,
   },
   enemyShadow: {
@@ -514,6 +596,15 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
+  hpBarShine: {
+    position: 'absolute',
+    top: 1,
+    left: 2,
+    right: 2,
+    height: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 1,
+  },
   typeBadge: {
     paddingHorizontal: 5,
     paddingVertical: 1,
@@ -526,17 +617,47 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
   messageBox: {
-    minHeight: 50,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: PALETTE.uiBg,
+    minHeight: 54,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: INDO_PALETTE.panelMid,
     borderTopWidth: 3,
     borderBottomWidth: 3,
-    borderColor: PALETTE.uiBorder,
+    borderColor: INDO_PALETTE.borderGold,
     justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  messageCornerTL: {
+    position: 'absolute', top: 0, left: 0,
+    width: 12, height: 12,
+    borderRightWidth: 2, borderBottomWidth: 2,
+    borderColor: INDO_PALETTE.goldDim,
+    opacity: 0.5,
+  },
+  messageCornerTR: {
+    position: 'absolute', top: 0, right: 0,
+    width: 12, height: 12,
+    borderLeftWidth: 2, borderBottomWidth: 2,
+    borderColor: INDO_PALETTE.goldDim,
+    opacity: 0.5,
+  },
+  messageCornerBL: {
+    position: 'absolute', bottom: 0, left: 0,
+    width: 12, height: 12,
+    borderRightWidth: 2, borderTopWidth: 2,
+    borderColor: INDO_PALETTE.goldDim,
+    opacity: 0.5,
+  },
+  messageCornerBR: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 12, height: 12,
+    borderLeftWidth: 2, borderTopWidth: 2,
+    borderColor: INDO_PALETTE.goldDim,
+    opacity: 0.5,
   },
   messageText: {
-    color: PALETTE.uiText,
+    color: INDO_PALETTE.textPrimary,
     fontSize: 14,
     fontFamily: 'monospace',
     lineHeight: 20,
@@ -564,10 +685,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
   },
-  atkBtn: { backgroundColor: '#802020', borderColor: '#a03030' },
-  defBtn: { backgroundColor: '#204080', borderColor: '#3060a0' },
-  itemBtn: { backgroundColor: '#206020', borderColor: '#308030' },
-  runBtn: { backgroundColor: '#606020', borderColor: '#808030' },
+  atkBtn: { backgroundColor: INDO_PALETTE.veeraRed, borderColor: INDO_PALETTE.veeraRedLight },
+  defBtn: { backgroundColor: INDO_PALETTE.shantaBlue, borderColor: INDO_PALETTE.shantaBlueLight },
+  itemBtn: { backgroundColor: INDO_PALETTE.mughalGreen, borderColor: INDO_PALETTE.mughalGreenLight },
+  runBtn: { backgroundColor: '#504820', borderColor: '#706030' },
   actionBtnText: {
     color: PALETTE.white,
     fontSize: 16,

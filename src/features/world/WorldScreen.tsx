@@ -32,6 +32,7 @@ import { formatWallet } from '../../engine/economyEngine';
 import { heatToTier, getWantedLabel } from '../../engine/stealthEngine';
 import BorderCrossingUI from '../../components/BorderCrossingUI';
 import JournalScreen from '../../components/JournalScreen';
+import ScreenTransition from '../../components/ScreenTransition';
 
 const WorldScreen: React.FC = () => {
   // === DEV MODE ===
@@ -663,7 +664,7 @@ const WorldScreen: React.FC = () => {
         </View>
       </View>
 
-      {showInventory && (
+      <ScreenTransition visible={showInventory}>
         <InventoryScreen
           inventory={inventoryState}
           onClose={() => { playSFX('menu_back'); store.getState().setShowInventory(false); }}
@@ -671,16 +672,16 @@ const WorldScreen: React.FC = () => {
           onUnequip={(slot) => { playSFX('equip'); store.getState().unequipItem(slot); }}
           onUse={handleUseItem}
         />
-      )}
+      </ScreenTransition>
 
-      {battleActive && (
+      <ScreenTransition visible={battleActive} duration={300}>
         <BattleScreen
           battle={battleState}
           inventory={inventoryState}
           onAction={handleBattleAction}
           onClose={handleBattleClose}
         />
-      )}
+      </ScreenTransition>
 
       {showJournal && (
         <JournalScreen

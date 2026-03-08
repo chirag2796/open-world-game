@@ -206,6 +206,8 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
             zIndex: entity.zIndex + 100,
           }}
         >
+          {/* Shadow under character */}
+          <View style={styles.charShadow} />
           <PunySprite
             sheetSource={getSheet(entity.id)}
             direction={entity.dir}
@@ -215,6 +217,7 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
           />
           {entity.name && (
             <View style={styles.nameTag}>
+              <View style={styles.nameTagBg} />
               <Text style={styles.nameText}>{entity.name}</Text>
             </View>
           )}
@@ -225,18 +228,36 @@ const EntityRenderer: React.FC<EntityRendererProps> = ({
 };
 
 const styles = StyleSheet.create({
+  charShadow: {
+    position: 'absolute',
+    bottom: -2,
+    left: CHAR_SIZE * 0.15,
+    width: CHAR_SIZE * 0.7,
+    height: 8,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: CHAR_SIZE * 0.35,
+  },
   nameTag: {
     position: 'absolute',
-    top: -16,
-    left: -12,
-    right: -12,
+    top: -18,
+    left: -16,
+    right: -16,
     alignItems: 'center',
+  },
+  nameTagBg: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 3,
   },
   nameText: {
     color: PALETTE.white,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
+    fontFamily: 'monospace',
     textAlign: 'center',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
     textShadowColor: PALETTE.black,
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 0,

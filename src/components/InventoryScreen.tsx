@@ -4,6 +4,8 @@ import { ItemCategory, EquipState } from '../types';
 import { ITEMS } from '../data/items';
 import { InventoryState } from '../engine/useInventory';
 import { PALETTE, SCREEN_WIDTH, SCREEN_HEIGHT } from '../engine/constants';
+import { RARITY_COLORS, RARITY_BORDERS } from '../styles/theme';
+import { ItemRarity } from '../types';
 
 interface InventoryScreenProps {
   inventory: InventoryState;
@@ -54,11 +56,13 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({
   // Compute equipped stats
   let totalAtk = 0;
   let totalDef = 0;
+  let totalWt = 0;
   for (const itemId of Object.values(inventory.equipped)) {
     if (itemId) {
       const d = ITEMS[itemId];
       totalAtk += d?.attack || 0;
       totalDef += d?.defense || 0;
+      totalWt += d?.weight || 0;
     }
   }
 
@@ -73,6 +77,7 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({
           <View style={styles.statsRow}>
             <Text style={styles.statText}>ATK:{totalAtk}</Text>
             <Text style={styles.statText}>DEF:{totalDef}</Text>
+            <Text style={[styles.statText, { color: '#a08060' }]}>WT:{totalWt}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
             <Text style={styles.closeBtnText}>X</Text>
@@ -127,63 +132,110 @@ const InventoryScreen: React.FC<InventoryScreenProps> = ({
           {categoryItems.length === 0 ? (
             <Text style={styles.emptyText}>No items</Text>
           ) : (
-            categoryItems.map((item, idx) => (
-              <TouchableOpacity
-                key={`${item.itemId}-${item.originalIdx}`}
-                style={[
-                  styles.itemRow,
-                  selectedIdx === idx && { backgroundColor: activeColor + '40' },
-                ]}
-                onPress={() => setSelectedIdx(idx === selectedIdx ? -1 : idx)}
-              >
-                <View style={[styles.itemIcon, { backgroundColor: activeColor }]}>
-                  <Text style={styles.itemIconText}>{item.def.icon}</Text>
-                </View>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{item.def.name}</Text>
-                  {item.def.attack != null && (
-                    <Text style={styles.itemStat}>ATK +{item.def.attack}</Text>
+            categoryItems.map((item, idx) => {
+              const rarity = item.def.rarity as ItemRarity | undefined;
+              const rarityColor = rarity ? RARITY_COLORS[rarity] : undefined;
+              const rarityBorder = rarity ? RARITY_BORDERS[rarity] : undefined;
+              return (
+                <TouchableOpacity
+                  key={`${item.itemId}-${item.originalIdx}`}
+                  style={[
+                    styles.itemRow,
+                    selectedIdx === idx && { backgroundColor: activeColor + '40' },
+                    rarityBorder ? { borderLeftWidth: 3, borderLeftColor: rarityBorder } : undefined,
+                  ]}
+                  onPress={() => setSelectedIdx(idx === selectedIdx ? -1 : idx)}
+                >
+                  <View style={[styles.itemIcon, { backgroundColor: rarityColor || activeColor }]}>
+                    <Text style={styles.itemIconText}>{item.def.icon}</Text>
+                  </View>
+                  <View style={styles.itemInfo}>
+                    <Text style={[styles.itemName, rarityColor ? { color: rarityColor } : undefined]}>
+                      {item.def.name}
+                    </Text>
+                    <View style={styles.itemStatRow}>
+                      {item.def.attack != null && item.def.attack > 0 && (
+                        <Text style={styles.itemStat}>ATK+{item.def.attack}</Text>
+                      )}
+                      {item.def.defense != null && item.def.defense > 0 && (
+                        <Text style={styles.itemStat}>DEF+{item.def.defense}</Text>
+                      )}
+                      {item.def.weight != null && item.def.weight > 0 && (
+                        <Text style={[styles.itemStat, { color: '#a08060' }]}>W:{item.def.weight}</Text>
+                      )}
+                      {item.def.crit != null && item.def.crit > 0 && (
+                        <Text style={[styles.itemStat, { color: '#e08040' }]}>CRT+{item.def.crit}</Text>
+                      )}
+                    </View>
+                  </View>
+                  {item.quantity > 1 && (
+                    <Text style={styles.itemQty}>x{item.quantity}</Text>
                   )}
-                  {item.def.defense != null && (
-                    <Text style={styles.itemStat}>DEF +{item.def.defense}</Text>
-                  )}
-                </View>
-                {item.quantity > 1 && (
-                  <Text style={styles.itemQty}>x{item.quantity}</Text>
-                )}
-              </TouchableOpacity>
-            ))
+                </TouchableOpacity>
+              );
+            })
           )}
         </ScrollView>
 
         {/* Detail panel for selected item */}
-        {selected && (
-          <View style={[styles.detailPanel, { borderTopColor: activeColor }]}>
-            <Text style={styles.detailName}>{selected.def.name}</Text>
-            <Text style={styles.detailDesc}>{selected.def.description}</Text>
-            <View style={styles.detailActions}>
-              {selected.def.equipSlot && (
-                <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: activeColor }]}
-                  onPress={() => onEquip(selected.itemId)}
-                >
-                  <Text style={styles.actionBtnText}>EQUIP</Text>
-                </TouchableOpacity>
+        {selected && (() => {
+          const r = selected.def.rarity as ItemRarity | undefined;
+          const rc = r ? RARITY_COLORS[r] : undefined;
+          return (
+            <View style={[styles.detailPanel, { borderTopColor: rc || activeColor }]}>
+              <View style={styles.detailHeader}>
+                <Text style={[styles.detailName, rc ? { color: rc } : undefined]}>{selected.def.name}</Text>
+                {r && <Text style={[styles.rarityLabel, { color: rc }]}>{r.toUpperCase()}</Text>}
+              </View>
+              {selected.def.material && (
+                <Text style={styles.materialText}>{selected.def.material.charAt(0).toUpperCase() + selected.def.material.slice(1)}</Text>
               )}
-              {selected.def.usable && (
-                <TouchableOpacity
-                  style={[styles.actionBtn, { backgroundColor: '#40a040' }]}
-                  onPress={() => onUse(selected.itemId)}
-                >
-                  <Text style={styles.actionBtnText}>USE</Text>
-                </TouchableOpacity>
+              <Text style={styles.detailDesc}>{selected.def.description}</Text>
+              {/* Stat grid */}
+              <View style={styles.detailStats}>
+                {selected.def.attack != null && selected.def.attack > 0 && (
+                  <Text style={styles.detailStatItem}>ATK +{selected.def.attack}</Text>
+                )}
+                {selected.def.defense != null && selected.def.defense > 0 && (
+                  <Text style={styles.detailStatItem}>DEF +{selected.def.defense}</Text>
+                )}
+                {selected.def.weight != null && selected.def.weight > 0 && (
+                  <Text style={[styles.detailStatItem, { color: '#a08060' }]}>WT {selected.def.weight}</Text>
+                )}
+                {selected.def.speed != null && selected.def.speed !== 0 && (
+                  <Text style={[styles.detailStatItem, { color: '#60a0e0' }]}>SPD {selected.def.speed > 0 ? '+' : ''}{selected.def.speed}</Text>
+                )}
+                {selected.def.crit != null && selected.def.crit > 0 && (
+                  <Text style={[styles.detailStatItem, { color: '#e08040' }]}>CRT +{selected.def.crit}%</Text>
+                )}
+              </View>
+              {selected.def.history && (
+                <Text style={styles.historyText}>{selected.def.history}</Text>
               )}
-              {selected.def.value > 0 && (
-                <Text style={styles.valueText}>{selected.def.value}G</Text>
-              )}
+              <View style={styles.detailActions}>
+                {selected.def.equipSlot && (
+                  <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: activeColor }]}
+                    onPress={() => onEquip(selected.itemId)}
+                  >
+                    <Text style={styles.actionBtnText}>EQUIP</Text>
+                  </TouchableOpacity>
+                )}
+                {selected.def.usable && (
+                  <TouchableOpacity
+                    style={[styles.actionBtn, { backgroundColor: '#40a040' }]}
+                    onPress={() => onUse(selected.itemId)}
+                  >
+                    <Text style={styles.actionBtnText}>USE</Text>
+                  </TouchableOpacity>
+                )}
+                {selected.def.value > 0 && (
+                  <Text style={styles.valueText}>{selected.def.value}G</Text>
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          );
+        })()}
       </View>
     </View>
   );
@@ -347,6 +399,11 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontWeight: 'bold',
   },
+  itemStatRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 2,
+  },
   itemStat: {
     color: PALETTE.lightGray,
     fontSize: 10,
@@ -365,11 +422,30 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: PALETTE.uiDark,
   },
+  detailHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   detailName: {
     color: PALETTE.uiText,
     fontSize: 14,
     fontFamily: 'monospace',
     fontWeight: 'bold',
+    flex: 1,
+  },
+  rarityLabel: {
+    fontSize: 9,
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  materialText: {
+    color: PALETTE.midGray,
+    fontSize: 9,
+    fontFamily: 'monospace',
+    fontStyle: 'italic',
     marginBottom: 4,
   },
   detailDesc: {
@@ -377,7 +453,30 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontFamily: 'monospace',
     lineHeight: 16,
-    marginBottom: 8,
+    marginBottom: 6,
+  },
+  detailStats: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
+  detailStatItem: {
+    color: PALETTE.lightGray,
+    fontSize: 10,
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+    backgroundColor: PALETTE.darkGray + '80',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  historyText: {
+    color: '#a0a080',
+    fontSize: 9,
+    fontFamily: 'monospace',
+    fontStyle: 'italic',
+    marginBottom: 6,
   },
   detailActions: {
     flexDirection: 'row',
