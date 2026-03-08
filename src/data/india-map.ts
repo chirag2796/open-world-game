@@ -13,8 +13,12 @@ import {
   BAORI, CHARBAGH, MAUSOLEUM, CARAVANSERAI,
   CHHATRI_PAVILION, RED_FORT, DESERT_HAVELI, BORDER_CHECKPOINT,
   MUGHAL_CAPITAL,
+  // New biome-specific structures
+  DESERT_VILLAGE, MOUNTAIN_VILLAGE, FOREST_VILLAGE, COASTAL_VILLAGE,
+  DESERT_OASIS, HOT_SPRINGS,
   StructureTemplate,
 } from './structures';
+import { ROUTES, SUB_ZONES, OBSTACLES, BIOME_ELEVATION, RouteDef } from './zones';
 
 // === MAP TEMPLATE ===
 // Low-res template: 40 cols x 50 rows → upscale 8x → 320x400 tile map
@@ -230,85 +234,91 @@ STATES['d'] = STATES['D'];
 // Format: [TileType, cumulativeWeight] — weights sum to 1.0
 type WeightedTile = [TileType, number];
 
+// Redesigned biome variety: more uniform base with intentional features.
+// Encounter zones (TALL_GRASS, SAND_DUNES) are placed by the route system,
+// not scattered randomly. This makes each biome feel distinct and purposeful.
 const BIOME_VARIETY: Record<BiomeType, WeightedTile[]> = {
   ocean: [[TileType.OCEAN, 1.0]],
   snow: [
-    [TileType.SNOW, 0.55],
-    [TileType.ICE, 0.70],
-    [TileType.MOUNTAIN, 0.90],
+    [TileType.SNOW, 0.65],
+    [TileType.ICE, 0.80],
+    [TileType.MOUNTAIN, 0.95],
     [TileType.CLIFF, 1.0],
   ],
   mountain: [
-    [TileType.MOUNTAIN, 0.45],
-    [TileType.ROCKS, 0.65],
-    [TileType.CLIFF, 0.80],
-    [TileType.PLATEAU, 0.90],
+    [TileType.MOUNTAIN, 0.50],
+    [TileType.ROCKS, 0.70],
+    [TileType.CLIFF, 0.85],
+    [TileType.ROCKY_PATH, 0.92],
     [TileType.SNOW, 1.0],
   ],
   desert: [
-    [TileType.DESERT, 0.55],
-    [TileType.SAND_DUNES, 0.80],
-    [TileType.BEACH, 0.92],
-    [TileType.ROCKS, 1.0],
+    [TileType.DESERT, 0.65],
+    [TileType.CRACKED_EARTH, 0.80],
+    [TileType.DRY_GRASS, 0.90],
+    [TileType.ROCKS, 0.96],
+    [TileType.CACTUS, 1.0],
   ],
   plains: [
-    [TileType.PLAINS, 0.50],
-    [TileType.TALL_GRASS, 0.68],
-    [TileType.FLOWERS, 0.78],
-    [TileType.FARM, 0.90],
-    [TileType.GARDEN, 1.0],
+    [TileType.PLAINS, 0.70],
+    [TileType.FARM, 0.82],
+    [TileType.FLOWERS, 0.90],
+    [TileType.GARDEN, 0.96],
+    [TileType.TALL_GRASS, 1.0],
   ],
   forest: [
-    [TileType.FOREST, 0.45],
-    [TileType.TALL_GRASS, 0.62],
-    [TileType.DENSE_JUNGLE, 0.72],
-    [TileType.TREE_BANYAN, 0.82],
-    [TileType.PLAINS, 0.92],
-    [TileType.FLOWERS, 1.0],
+    [TileType.FOREST, 0.55],
+    [TileType.TREE_BANYAN, 0.70],
+    [TileType.PLAINS, 0.80],
+    [TileType.TALL_GRASS, 0.90],
+    [TileType.FLOWERS, 0.96],
+    [TileType.BAMBOO, 1.0],
   ],
   dense_forest: [
-    [TileType.DENSE_JUNGLE, 0.45],
-    [TileType.FOREST, 0.68],
-    [TileType.TALL_GRASS, 0.80],
-    [TileType.TREE_BANYAN, 0.92],
+    [TileType.DENSE_JUNGLE, 0.50],
+    [TileType.FOREST, 0.72],
+    [TileType.TREE_BANYAN, 0.84],
+    [TileType.BAMBOO, 0.92],
     [TileType.SWAMP, 1.0],
   ],
   plateau: [
-    [TileType.PLATEAU, 0.45],
-    [TileType.ROCKS, 0.60],
-    [TileType.PLAINS, 0.75],
-    [TileType.MOUNTAIN, 0.85],
-    [TileType.CLIFF, 0.92],
-    [TileType.TALL_GRASS, 1.0],
+    [TileType.PLATEAU, 0.55],
+    [TileType.ROCKS, 0.70],
+    [TileType.PLAINS, 0.82],
+    [TileType.DRY_GRASS, 0.92],
+    [TileType.CLIFF, 1.0],
   ],
   wetland: [
     [TileType.SWAMP, 0.35],
-    [TileType.TALL_GRASS, 0.52],
+    [TileType.MANGROVE, 0.50],
     [TileType.PLAINS, 0.65],
-    [TileType.SHALLOW_WATER, 0.78],
-    [TileType.FLOWERS, 0.88],
+    [TileType.SHALLOW_WATER, 0.80],
+    [TileType.TALL_GRASS, 0.92],
     [TileType.LAKE, 1.0],
   ],
   coastal: [
-    [TileType.PLAINS, 0.35],
-    [TileType.TALL_GRASS, 0.50],
-    [TileType.FLOWERS, 0.62],
-    [TileType.FARM, 0.74],
-    [TileType.GARDEN, 0.84],
-    [TileType.TREE_PALM, 1.0],
+    [TileType.PLAINS, 0.40],
+    [TileType.TREE_PALM, 0.55],
+    [TileType.FARM, 0.68],
+    [TileType.FLOWERS, 0.78],
+    [TileType.GARDEN, 0.88],
+    [TileType.TALL_GRASS, 1.0],
   ],
 };
 
-// Smooth noise: use coarse grid hash for larger-scale patches (4x4 tile regions)
-// This prevents single-tile noise and creates natural clusters
+// Multi-octave smooth noise for natural-looking terrain clusters.
+// Uses 3 scales: mega (16x16), coarse (8x8), fine (per-tile) for
+// large biome patches with natural irregular edges.
 function pickBiomeTileSmooth(biome: BiomeType, x: number, y: number): TileType {
-  // Mix fine and coarse hash for natural clustering
-  const coarseX = Math.floor(x / 4);
-  const coarseY = Math.floor(y / 4);
+  const megaX = Math.floor(x / 16);
+  const megaY = Math.floor(y / 16);
+  const megaH = hash(megaX * 13, megaY * 37);
+  const coarseX = Math.floor(x / 8);
+  const coarseY = Math.floor(y / 8);
   const coarseH = hash(coarseX * 17, coarseY * 31);
-  const fineH = hash(x, y);
-  // 70% coarse influence for clustering, 30% fine for edge variety
-  const blended = coarseH * 0.7 + fineH * 0.3;
+  const fineH = hash(x * 7, y * 11);
+  // 50% mega for large patches, 35% coarse for medium clusters, 15% fine for edges
+  const blended = megaH * 0.50 + coarseH * 0.35 + fineH * 0.15;
   const variants = BIOME_VARIETY[biome];
   for (const [tile, threshold] of variants) {
     if (blended < threshold) return tile;
@@ -592,57 +602,44 @@ function drawRiverSegment(
   }
 }
 
-function drawPathSegment(
-  ground: TileType[][],
-  x0: number, y0: number, x1: number, y1: number,
-  tile: TileType,
-) {
-  const dx = Math.abs(x1 - x0);
-  const dy = Math.abs(y1 - y0);
-  const sx = x0 < x1 ? 1 : -1;
-  const sy = y0 < y1 ? 1 : -1;
-  let err = dx - dy;
-  let cx = x0, cy = y0;
-
-  while (true) {
-    // Only overwrite non-building, non-water tiles
-    if (cx >= 0 && cx < MAP_W && cy >= 0 && cy < MAP_H) {
-      const existing = ground[cy][cx];
-      if (existing !== TileType.OCEAN && existing !== TileType.DEEP_OCEAN &&
-          existing !== TileType.RIVER && existing !== TileType.LAKE &&
-          existing !== TileType.WALL_MUD && existing !== TileType.WALL_STONE &&
-          existing !== TileType.FORT_WALL && existing !== TileType.PALACE &&
-          existing !== TileType.TEMPLE && existing !== TileType.ROOF) {
-        ground[cy][cx] = tile;
-      }
-    }
-    if (cx === x1 && cy === y1) break;
-    const e2 = 2 * err;
-    if (e2 > -dy) { err -= dy; cx += sx; }
-    if (e2 < dx) { err += dx; cy += sy; }
+// Biome-specific village template selection
+function getVillageTemplate(biome: BiomeType): StructureTemplate {
+  switch (biome) {
+    case 'desert': return DESERT_VILLAGE;
+    case 'mountain': case 'snow': return MOUNTAIN_VILLAGE;
+    case 'forest': case 'dense_forest': return FOREST_VILLAGE;
+    case 'coastal': case 'wetland': return COASTAL_VILLAGE;
+    default: return VILLAGE_SMALL;
   }
 }
 
 // Settlement placement using structure templates
 function placeSettlement(ground: TileType[][], s: SettlementDef, biome: BiomeType) {
-  const baseTile = biome === 'desert' ? TileType.DESERT : TileType.PLAINS;
+  const baseTile = biome === 'desert' ? TileType.DESERT
+    : biome === 'mountain' || biome === 'snow' ? TileType.ROCKY_PATH
+    : biome === 'coastal' ? TileType.BEACH
+    : TileType.PLAINS;
 
-  // Clear area around settlement
+  // Clear area around settlement with natural-looking edges
   const clearSize = s.type === 'capital' ? 18 : s.type === 'city' ? 14 : 8;
   for (let dy = -clearSize; dy <= clearSize; dy++) {
     for (let dx = -clearSize; dx <= clearSize; dx++) {
-      setTile(ground, s.tileX + dx, s.tileY + dy, baseTile);
+      // Circular clearing with slight randomness for natural edges
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const jitter = hash(s.tileX + dx, s.tileY + dy) * 2;
+      if (dist <= clearSize + jitter - 1) {
+        setTile(ground, s.tileX + dx, s.tileY + dy, baseTile);
+      }
     }
   }
 
   // Place appropriate structure template
   if (s.type === 'capital') {
-    // Capital gets Mughal capital layout
     placeStructureCentered(ground, MUGHAL_CAPITAL, s.tileX, s.tileY, MAP_W, MAP_H);
   } else if (s.type === 'city') {
     placeStructureCentered(ground, TOWN, s.tileX, s.tileY, MAP_W, MAP_H);
   } else {
-    placeStructureCentered(ground, VILLAGE_SMALL, s.tileX, s.tileY, MAP_W, MAP_H);
+    placeStructureCentered(ground, getVillageTemplate(biome), s.tileX, s.tileY, MAP_W, MAP_H);
   }
 }
 
@@ -693,6 +690,462 @@ function placeCampsites(ground: TileType[][], settlements: { settlement: Settlem
   }
 }
 
+// === ROUTE DRAWING ===
+// Draw Pokemon-style routes: clear path with encounter grass on sides
+
+function drawRoute(ground: TileType[][], route: RouteDef) {
+  const wp = route.waypoints;
+  for (let i = 0; i < wp.length - 1; i++) {
+    const x0 = wp[i].x, y0 = wp[i].y;
+    const x1 = wp[i + 1].x, y1 = wp[i + 1].y;
+    // Draw the main path (3 tiles wide)
+    drawWidePath(ground, x0, y0, x1, y1, route.pathTile, 3);
+    // Draw encounter grass on both sides
+    drawRouteEncounterGrass(ground, x0, y0, x1, y1, route.encounterWidth);
+  }
+}
+
+function drawWidePath(
+  ground: TileType[][], x0: number, y0: number, x1: number, y1: number,
+  tile: TileType, width: number,
+) {
+  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy, cx = x0, cy = y0;
+  const halfW = Math.floor(width / 2);
+
+  while (true) {
+    // Draw width perpendicular to path direction
+    for (let w = -halfW; w <= halfW; w++) {
+      // Determine perpendicular direction
+      if (Math.abs(x1 - x0) > Math.abs(y1 - y0)) {
+        // Mostly horizontal path → spread vertically
+        if (cx >= 0 && cx < MAP_W && cy + w >= 0 && cy + w < MAP_H) {
+          const existing = ground[cy + w][cx];
+          if (!isProtectedTile(existing)) ground[cy + w][cx] = tile;
+        }
+      } else {
+        // Mostly vertical path → spread horizontally
+        if (cx + w >= 0 && cx + w < MAP_W && cy >= 0 && cy < MAP_H) {
+          const existing = ground[cy][cx + w];
+          if (!isProtectedTile(existing)) ground[cy][cx + w] = tile;
+        }
+      }
+    }
+    if (cx === x1 && cy === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; cx += sx; }
+    if (e2 < dx) { err += dx; cy += sy; }
+  }
+}
+
+// Draw encounter grass (TALL_GRASS/SAND_DUNES) on both sides of a route segment
+function drawRouteEncounterGrass(
+  ground: TileType[][], x0: number, y0: number, x1: number, y1: number,
+  encounterWidth: number,
+) {
+  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy, cx = x0, cy = y0;
+
+  while (true) {
+    const isHorizontal = Math.abs(x1 - x0) > Math.abs(y1 - y0);
+    for (let side = -1; side <= 1; side += 2) { // -1 = left/up, +1 = right/down
+      for (let w = 2; w <= encounterWidth + 1; w++) {
+        const offset = side * w;
+        let tx: number, ty: number;
+        if (isHorizontal) {
+          tx = cx; ty = cy + offset;
+        } else {
+          tx = cx + offset; ty = cy;
+        }
+        if (tx >= 0 && tx < MAP_W && ty >= 0 && ty < MAP_H) {
+          const existing = ground[ty][tx];
+          if (!isProtectedTile(existing) && existing !== TileType.PATH_DIRT &&
+              existing !== TileType.PATH_STONE && existing !== TileType.RIVER) {
+            // Use biome-appropriate encounter tile
+            if (existing === TileType.DESERT || existing === TileType.CRACKED_EARTH ||
+                existing === TileType.DRY_GRASS) {
+              ground[ty][tx] = TileType.SAND_DUNES;
+            } else if (existing === TileType.DENSE_JUNGLE || existing === TileType.FOREST ||
+                       existing === TileType.BAMBOO) {
+              ground[ty][tx] = TileType.DENSE_JUNGLE;
+            } else if (existing === TileType.SWAMP || existing === TileType.MANGROVE) {
+              ground[ty][tx] = TileType.SWAMP;
+            } else {
+              ground[ty][tx] = TileType.TALL_GRASS;
+            }
+          }
+        }
+      }
+    }
+    if (cx === x1 && cy === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; cx += sx; }
+    if (e2 < dx) { err += dx; cy += sy; }
+  }
+}
+
+function isProtectedTile(tile: TileType): boolean {
+  return tile === TileType.OCEAN || tile === TileType.DEEP_OCEAN ||
+    tile === TileType.RIVER || tile === TileType.LAKE ||
+    tile === TileType.WALL_MUD || tile === TileType.WALL_STONE ||
+    tile === TileType.FORT_WALL || tile === TileType.PALACE ||
+    tile === TileType.TEMPLE || tile === TileType.ROOF ||
+    tile === TileType.SANDSTONE || tile === TileType.MARBLE ||
+    tile === TileType.DOME || tile === TileType.MOSQUE ||
+    tile === TileType.MUGHAL_GATE || tile === TileType.BORDER_POST;
+}
+
+// === BIOME TRANSITIONS ===
+// Smooth transitions at state borders instead of sharp biome edges
+
+function addBiomeTransitions(ground: TileType[][]) {
+  // Transition tiles: blend between biomes at template cell edges
+  const TRANSITION_MAP: Record<string, TileType> = {
+    'plains_desert': TileType.DRY_GRASS,
+    'desert_plains': TileType.DRY_GRASS,
+    'plains_forest': TileType.TALL_GRASS,
+    'forest_plains': TileType.TALL_GRASS,
+    'plains_mountain': TileType.ROCKY_PATH,
+    'mountain_plains': TileType.ROCKY_PATH,
+    'forest_mountain': TileType.TREE_PINE,
+    'mountain_forest': TileType.TREE_PINE,
+    'desert_mountain': TileType.ROCKS,
+    'mountain_desert': TileType.ROCKS,
+    'plains_wetland': TileType.TALL_GRASS,
+    'wetland_plains': TileType.TALL_GRASS,
+    'plains_coastal': TileType.FARM,
+    'coastal_plains': TileType.FARM,
+    'forest_dense_forest': TileType.FOREST,
+    'dense_forest_forest': TileType.FOREST,
+    'plateau_plains': TileType.DRY_GRASS,
+    'plains_plateau': TileType.DRY_GRASS,
+    'plateau_desert': TileType.CRACKED_EARTH,
+    'desert_plateau': TileType.CRACKED_EARTH,
+    'coastal_wetland': TileType.MANGROVE,
+    'wetland_coastal': TileType.MANGROVE,
+    'forest_wetland': TileType.SWAMP,
+    'wetland_forest': TileType.SWAMP,
+    'plateau_forest': TileType.TALL_GRASS,
+    'forest_plateau': TileType.TALL_GRASS,
+  };
+
+  // Scan for biome boundaries and add 2-tile transition strips
+  for (let ty = 1; ty < 49; ty++) {
+    for (let tx = 1; tx < 39; tx++) {
+      const code = TEMPLATE[ty]?.[tx];
+      if (!code || code === '.') continue;
+      const biome1 = code === '^' ? 'snow' : STATES[code]?.biome;
+      if (!biome1) continue;
+
+      // Check right and down neighbors
+      for (const [ntx, nty] of [[tx + 1, ty], [tx, ty + 1]]) {
+        const ncode = TEMPLATE[nty]?.[ntx];
+        if (!ncode || ncode === '.') continue;
+        const biome2 = ncode === '^' ? 'snow' : STATES[ncode]?.biome;
+        if (!biome2 || biome1 === biome2) continue;
+
+        const key = `${biome1}_${biome2}`;
+        const transitionTile = TRANSITION_MAP[key];
+        if (!transitionTile) continue;
+
+        // Place transition strip at the border (last 2 tiles of current cell,
+        // first 2 tiles of next cell)
+        const isHorizontal = ntx !== tx;
+        if (isHorizontal) {
+          const borderX = (tx + 1) * UPSCALE;
+          for (let py = ty * UPSCALE; py < (ty + 1) * UPSCALE; py++) {
+            for (let off = -2; off < 2; off++) {
+              const px = borderX + off;
+              if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
+                const existing = ground[py][px];
+                if (!isProtectedTile(existing) && existing !== TileType.RIVER &&
+                    existing !== TileType.PATH_DIRT && existing !== TileType.PATH_STONE) {
+                  // Add some randomness so transition isn't a straight line
+                  if (hash(px * 3, py * 7) < 0.7) {
+                    ground[py][px] = transitionTile;
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          const borderY = (ty + 1) * UPSCALE;
+          for (let px = tx * UPSCALE; px < (tx + 1) * UPSCALE; px++) {
+            for (let off = -2; off < 2; off++) {
+              const py = borderY + off;
+              if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
+                const existing = ground[py][px];
+                if (!isProtectedTile(existing) && existing !== TileType.RIVER &&
+                    existing !== TileType.PATH_DIRT && existing !== TileType.PATH_STONE) {
+                  if (hash(px * 3, py * 7) < 0.7) {
+                    ground[py][px] = transitionTile;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// === ELEVATION GENERATION ===
+
+function generateElevation(ground: TileType[][]): number[][] {
+  const elevation: number[][] = Array.from({ length: MAP_H }, () =>
+    Array.from({ length: MAP_W }, () => 0)
+  );
+
+  // Base elevation from template biome
+  for (let ty = 0; ty < 50; ty++) {
+    const row = TEMPLATE[ty];
+    if (!row) continue;
+    for (let tx = 0; tx < 40; tx++) {
+      const code = row[tx];
+      if (code === '.') continue;
+      const biome = code === '^' ? 'snow' : STATES[code]?.biome;
+      const baseElev = biome ? (BIOME_ELEVATION[biome] ?? 1) : 0;
+      for (let dy = 0; dy < UPSCALE; dy++) {
+        for (let dx = 0; dx < UPSCALE; dx++) {
+          const px = tx * UPSCALE + dx;
+          const py = ty * UPSCALE + dy;
+          if (px < MAP_W && py < MAP_H) {
+            elevation[py][px] = baseElev;
+          }
+        }
+      }
+    }
+  }
+
+  // Rivers carve to elevation 1
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      if (ground[y][x] === TileType.RIVER || ground[y][x] === TileType.BRIDGE) {
+        elevation[y][x] = 1;
+      }
+    }
+  }
+
+  // Settlements flatten to base elevation
+  const settlements = getAllSettlements();
+  for (const { settlement, biome } of settlements) {
+    const baseElev = BIOME_ELEVATION[biome] ?? 1;
+    const clearSize = settlement.type === 'capital' ? 18 : settlement.type === 'city' ? 14 : 8;
+    for (let dy = -clearSize; dy <= clearSize; dy++) {
+      for (let dx = -clearSize; dx <= clearSize; dx++) {
+        const px = settlement.tileX + dx;
+        const py = settlement.tileY + dy;
+        if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
+          elevation[py][px] = Math.min(baseElev, 2); // Cap at 2 for walkability
+        }
+      }
+    }
+  }
+
+  // Routes flatten to terrain elevation (ensure walkability)
+  for (const route of ROUTES) {
+    for (let i = 0; i < route.waypoints.length - 1; i++) {
+      const p1 = route.waypoints[i], p2 = route.waypoints[i + 1];
+      flattenRouteElevation(elevation, p1.x, p1.y, p2.x, p2.y);
+    }
+  }
+
+  // Add ledge tiles at significant elevation changes
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
+      const e = elevation[y][x];
+      // Check if this is a cliff edge (drop of 2+ to neighbor)
+      if (e >= 2 && elevation[y + 1]?.[x] <= e - 2 && ground[y][x] !== TileType.OCEAN) {
+        if (ground[y + 1][x] !== TileType.OCEAN && ground[y + 1][x] !== TileType.RIVER &&
+            !isProtectedTile(ground[y + 1][x])) {
+          // Place a ledge at the cliff edge (visual indicator)
+          if (hash(x * 5, y * 3) < 0.3) {
+            ground[y][x] = TileType.LEDGE_S;
+          }
+        }
+      }
+    }
+  }
+
+  // Place stairs at route/elevation intersections
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      if (ground[y][x] === TileType.STAIRS) {
+        // Stairs always at elevation of the higher side
+        const maxNeighbor = Math.max(
+          elevation[y - 1]?.[x] ?? 0, elevation[y + 1]?.[x] ?? 0,
+          elevation[y]?.[x - 1] ?? 0, elevation[y]?.[x + 1] ?? 0,
+        );
+        elevation[y][x] = maxNeighbor;
+      }
+    }
+  }
+
+  return elevation;
+}
+
+function flattenRouteElevation(
+  elevation: number[][], x0: number, y0: number, x1: number, y1: number,
+) {
+  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy, cx = x0, cy = y0;
+  let prevElev = elevation[cy]?.[cx] ?? 1;
+
+  while (true) {
+    if (cx >= 0 && cx < MAP_W && cy >= 0 && cy < MAP_H) {
+      const currElev = elevation[cy][cx];
+      // Gradually transition: max 1 level change per tile
+      if (currElev > prevElev + 1) {
+        elevation[cy][cx] = prevElev + 1;
+      }
+      prevElev = elevation[cy][cx];
+      // Also flatten 1 tile on each side
+      for (const off of [-1, 1]) {
+        if (Math.abs(x1 - x0) > Math.abs(y1 - y0)) {
+          if (cy + off >= 0 && cy + off < MAP_H) elevation[cy + off][cx] = elevation[cy][cx];
+        } else {
+          if (cx + off >= 0 && cx + off < MAP_W) elevation[cy][cx + off] = elevation[cy][cx];
+        }
+      }
+    }
+    if (cx === x1 && cy === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; cx += sx; }
+    if (e2 < dx) { err += dx; cy += sy; }
+  }
+}
+
+// === OBSTACLE PLACEMENT ===
+
+function placeObstacles(ground: TileType[][]) {
+  for (const obs of OBSTACLES) {
+    for (let dy = 0; dy < obs.height; dy++) {
+      for (let dx = 0; dx < obs.width; dx++) {
+        setTile(ground, obs.tileX + dx, obs.tileY + dy, obs.tileType);
+      }
+    }
+  }
+}
+
+// === SUB-ZONE FEATURES ===
+
+function placeSubZoneFeatures(ground: TileType[][]) {
+  for (const zone of SUB_ZONES) {
+    switch (zone.type) {
+      case 'oasis':
+        placeStructureCentered(ground, DESERT_OASIS, zone.center.x, zone.center.y, MAP_W, MAP_H);
+        break;
+      case 'hot_springs':
+        placeStructureCentered(ground, HOT_SPRINGS, zone.center.x, zone.center.y, MAP_W, MAP_H);
+        break;
+      case 'sacred_grove': {
+        // Clear a small peaceful area
+        const r = Math.min(zone.radius, 4);
+        for (let dy = -r; dy <= r; dy++) {
+          for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy <= r * r) {
+              const px = zone.center.x + dx, py = zone.center.y + dy;
+              if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
+                const existing = ground[py][px];
+                if (!isProtectedTile(existing)) {
+                  ground[py][px] = hash(px, py) < 0.4 ? TileType.FLOWERS : TileType.GARDEN;
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+      case 'training_ground': {
+        // Encounter-heavy area with tall grass patches
+        const r = zone.radius;
+        for (let dy = -r; dy <= r; dy++) {
+          for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy <= r * r) {
+              const px = zone.center.x + dx, py = zone.center.y + dy;
+              if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
+                const existing = ground[py][px];
+                if (!isProtectedTile(existing) && existing !== TileType.PATH_DIRT) {
+                  if (hash(px * 3, py * 5) < 0.5) {
+                    ground[py][px] = TileType.TALL_GRASS;
+                  }
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+      case 'bandit_camp': {
+        // Dense encounter area with rocks for cover
+        const r = zone.radius;
+        for (let dy = -r; dy <= r; dy++) {
+          for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy <= r * r) {
+              const px = zone.center.x + dx, py = zone.center.y + dy;
+              if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
+                const existing = ground[py][px];
+                if (!isProtectedTile(existing)) {
+                  const h = hash(px * 7, py * 11);
+                  if (h < 0.4) ground[py][px] = TileType.TALL_GRASS;
+                  else if (h < 0.5) ground[py][px] = TileType.ROCKS;
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+      case 'haunted_grounds': {
+        // Swampy, dark area
+        const r = zone.radius;
+        for (let dy = -r; dy <= r; dy++) {
+          for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy <= r * r) {
+              const px = zone.center.x + dx, py = zone.center.y + dy;
+              if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
+                const existing = ground[py][px];
+                if (!isProtectedTile(existing)) {
+                  const h = hash(px * 9, py * 13);
+                  if (h < 0.35) ground[py][px] = TileType.SWAMP;
+                  else if (h < 0.55) ground[py][px] = TileType.MANGROVE;
+                  else if (h < 0.7) ground[py][px] = TileType.DENSE_JUNGLE;
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+      case 'ancient_ruins': {
+        // Scatter ruins tiles in the area
+        const r = zone.radius;
+        for (let dy = -r; dy <= r; dy++) {
+          for (let dx = -r; dx <= r; dx++) {
+            if (dx * dx + dy * dy <= r * r) {
+              const px = zone.center.x + dx, py = zone.center.y + dy;
+              if (px >= 0 && px < MAP_W && py >= 0 && py < MAP_H) {
+                const existing = ground[py][px];
+                if (!isProtectedTile(existing)) {
+                  const h = hash(px * 11, py * 17);
+                  if (h < 0.15) ground[py][px] = TileType.RUINS;
+                  else if (h < 0.3) ground[py][px] = TileType.ROCKS;
+                }
+              }
+            }
+          }
+        }
+        break;
+      }
+      // Other types don't modify terrain (they just affect encounter rates)
+    }
+  }
+}
+
 // === MAIN MAP GENERATOR ===
 
 export function generateIndiaMap(): TileMapData {
@@ -726,22 +1179,25 @@ export function generateIndiaMap(): TileMapData {
     }
   }
 
-  // 2. Coastal transitions (beaches + shallow water)
+  // 2. Biome transitions at state borders (smooth blending)
+  addBiomeTransitions(ground);
+
+  // 3. Coastal transitions (beaches + shallow water)
   addCoastalTransitions(ground);
 
-  // 3. Rivers
+  // 4. Rivers
   for (const river of RIVERS) {
     for (let i = 0; i < river.length - 1; i++) {
       drawRiverSegment(ground, river[i][0], river[i][1], river[i + 1][0], river[i + 1][1], i < 2 ? 2 : 3);
     }
   }
 
-  // 4. Place nature structures (forests, lakes, rocks, etc.)
+  // 5. Place nature structures (forests, lakes, rocks, etc.)
   for (const placement of NATURE_PLACEMENTS) {
     placeStructureCentered(ground, placement.structure, placement.x, placement.y, MAP_W, MAP_H);
   }
 
-  // 5. Settlements
+  // 6. Settlements (biome-specific templates)
   const settlements = getAllSettlements();
   for (const { settlement, biome } of settlements) {
     placeSettlement(ground, settlement, biome);
@@ -757,31 +1213,29 @@ export function generateIndiaMap(): TileMapData {
     placeStructureCentered(ground, placement.structure, placement.x, placement.y, MAP_W, MAP_H);
   }
 
-  // 8. Connect settlements with paths
-  for (let i = 0; i < settlements.length; i++) {
-    let nearest = -1, minDist = 60;
-    for (let j = 0; j < settlements.length; j++) {
-      if (i === j) continue;
-      const dx = settlements[i].settlement.tileX - settlements[j].settlement.tileX;
-      const dy = settlements[i].settlement.tileY - settlements[j].settlement.tileY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < minDist) { minDist = dist; nearest = j; }
-    }
-    if (nearest >= 0) {
-      const s1 = settlements[i].settlement, s2 = settlements[nearest].settlement;
-      drawPathSegment(ground, s1.tileX, s1.tileY, s2.tileX, s2.tileY, TileType.PATH_DIRT);
-    }
+  // 8. Draw Pokemon-style routes between settlements
+  for (const route of ROUTES) {
+    drawRoute(ground, route);
   }
 
   // 9. Campsites between distant settlements
   placeCampsites(ground, settlements);
 
-  // 10. Build decoration layer (initially empty)
+  // 10. Place sub-zone features (oases, sacred groves, haunted areas, etc.)
+  placeSubZoneFeatures(ground);
+
+  // 11. Place progression obstacles
+  placeObstacles(ground);
+
+  // 12. Generate elevation layer
+  const elevation = generateElevation(ground);
+
+  // 13. Build decoration layer (initially empty)
   const decor: (TileType | -1)[][] = Array.from({ length: MAP_H }, () =>
     Array.from({ length: MAP_W }, () => -1 as (TileType | -1))
   );
 
-  return { width: MAP_W, height: MAP_H, ground, decor };
+  return { width: MAP_W, height: MAP_H, ground, decor, elevation };
 }
 
 // === EXPORTS: LOOKUP FUNCTIONS ===
@@ -994,6 +1448,204 @@ const STORY_NPCS: NPC[] = [
     settlement: 'Mathura',
     social: { title: 'Weaver', socialClass: 'artisan' },
   },
+
+  // === EXPANDED NPCs: every settlement gets life ===
+
+  // -- Agra --
+  {
+    id: 'agra-guard', name: 'Fort Guard Salim',
+    position: { x: 114, y: 76 }, direction: 'right', behavior: 'guard',
+    dialog: ['The fort is sealed by imperial decree.', 'Only those with the Fort Seal may enter.'],
+    settlement: 'Agra',
+    social: { title: 'Sipahi', socialClass: 'soldier', zatRank: 100 },
+  },
+  {
+    id: 'agra-scholar', name: 'Astronomer Zafar',
+    position: { x: 118, y: 80 }, direction: 'down', behavior: 'stationary',
+    dialog: ['The stars foretell great upheaval.', 'The Charbagh gardens encode celestial mathematics.'],
+    settlement: 'Agra',
+    social: { title: 'Munajjim', socialClass: 'scholar' },
+  },
+
+  // -- Lucknow --
+  {
+    id: 'lucknow-merchant', name: 'Perfumer Nasreen',
+    position: { x: 128, y: 82 }, direction: 'left', behavior: 'wander', wanderRadius: 2,
+    dialog: ['Lucknow is famous for its attar!', 'Rose, jasmine, sandalwood... name your fragrance.'],
+    settlement: 'Lucknow',
+    social: { title: 'Attarwala', socialClass: 'merchant' },
+    shopItems: ['sandalwood_balm', 'camphor_incense', 'tulsi_elixir'],
+  },
+
+  // -- Varanasi --
+  {
+    id: 'varanasi-boatman', name: 'Boatman Kedar',
+    position: { x: 146, y: 90 }, direction: 'down', behavior: 'stationary',
+    dialog: ['I ferry pilgrims across the sacred Ganga.', 'For a token, I could take you across the flooded lands to the east.'],
+    settlement: 'Varanasi',
+    social: { title: 'Mallah', socialClass: 'peasant' },
+    shopItems: ['boat_token'],
+  },
+
+  // -- Pataliputra --
+  {
+    id: 'pataliputra-guard', name: 'Captain Ashoka',
+    position: { x: 158, y: 96 }, direction: 'left', behavior: 'guard',
+    dialog: ['Pataliputra was once the greatest city in the world.', 'Now it guards the gate to the east.'],
+    settlement: 'Pataliputra',
+    social: { title: 'Qiladar', socialClass: 'soldier', zatRank: 200 },
+  },
+  {
+    id: 'pataliputra-monk', name: 'Monk Nalanda',
+    position: { x: 154, y: 98 }, direction: 'down', behavior: 'stationary',
+    dialog: ['The old university once drew scholars from across the world.', 'Knowledge is the greatest treasure.'],
+    settlement: 'Pataliputra',
+    social: { title: 'Bhikshu', socialClass: 'priest' },
+  },
+
+  // -- Amber --
+  {
+    id: 'amber-merchant', name: 'Jeweler Lakshmi',
+    position: { x: 74, y: 90 }, direction: 'right', behavior: 'wander', wanderRadius: 2,
+    dialog: ['Rajputana gems, the finest in Hindustan!', 'Diamonds from Golconda, rubies from Burma...'],
+    settlement: 'Amber',
+    social: { title: 'Sahukar', socialClass: 'merchant' },
+    shopItems: ['jade_amulet', 'bazuband', 'sharpening_stone'],
+  },
+  {
+    id: 'amber-blacksmith', name: 'Blacksmith Karan',
+    position: { x: 70, y: 88 }, direction: 'down', behavior: 'stationary',
+    dialog: ['I forge the finest Rajput steel.', 'Bring me materials and I can craft weapons of legend.'],
+    settlement: 'Amber',
+    social: { title: 'Lohar', socialClass: 'artisan' },
+    shopItems: ['iron_talwar', 'katara', 'iron_pickaxe', 'dhal_shield'],
+  },
+
+  // -- Jodhpur --
+  {
+    id: 'jodhpur-child', name: 'Priya',
+    position: { x: 52, y: 98 }, direction: 'right', behavior: 'wander', wanderRadius: 4,
+    dialog: ['Have you seen the blue houses?', 'They say the color keeps scorpions away!'],
+    settlement: 'Jodhpur',
+    social: { title: 'Child', socialClass: 'peasant' },
+  },
+
+  // -- Jaisalmer --
+  {
+    id: 'jaisalmer-guide', name: 'Desert Guide Bhati',
+    position: { x: 46, y: 84 }, direction: 'down', behavior: 'stationary',
+    dialog: ['The deep desert is treacherous without a compass.', 'I can sell you one — it will save your life.'],
+    settlement: 'Jaisalmer',
+    social: { title: 'Rahdari', socialClass: 'merchant' },
+    shopItems: ['desert_compass', 'rope', 'healing_herb'],
+  },
+
+  // -- Bhopal --
+  {
+    id: 'bhopal-woodcutter', name: 'Woodcutter Ramu',
+    position: { x: 98, y: 116 }, direction: 'right', behavior: 'wander', wanderRadius: 3,
+    dialog: ['These forests are thick as a wall.', 'A good axe would cut right through fallen timber.'],
+    settlement: 'Bhopal',
+    social: { title: 'Lakadhari', socialClass: 'artisan' },
+    shopItems: ['clearing_axe', 'rope', 'antidote_paste'],
+  },
+
+  // -- Gwalior --
+  {
+    id: 'gwalior-guard', name: 'Gatekeeper Singh',
+    position: { x: 104, y: 90 }, direction: 'down', behavior: 'guard',
+    dialog: ['Gwalior Fort watches over the Chambal.', 'Dacoits plague the ravines to the south.'],
+    settlement: 'Gwalior',
+    social: { title: 'Darban', socialClass: 'soldier', zatRank: 100 },
+  },
+
+  // -- Gaur (Bengal) --
+  {
+    id: 'gaur-historian', name: 'Chronicler Hasan',
+    position: { x: 174, y: 112 }, direction: 'left', behavior: 'stationary',
+    dialog: ['Gaur was the capital of Bengal sultans.', 'The ruins tell stories of past glory.'],
+    settlement: 'Gaur',
+    social: { title: 'Waqianawis', socialClass: 'scholar' },
+  },
+
+  // -- Puri --
+  {
+    id: 'puri-priest', name: 'Pujari Jagannath',
+    position: { x: 178, y: 160 }, direction: 'down', behavior: 'stationary',
+    dialog: ['Welcome to Puri, abode of Lord Jagannath!', 'The Rath Yatra chariot festival draws millions.'],
+    settlement: 'Puri',
+    social: { title: 'Pujari', socialClass: 'priest' },
+  },
+
+  // -- Ahmedabad --
+  {
+    id: 'ahmedabad-textile', name: 'Weaver Meera',
+    position: { x: 38, y: 148 }, direction: 'right', behavior: 'wander', wanderRadius: 3,
+    dialog: ['Gujarat textiles are prized across the world!', 'Silk, cotton, bandhani... all from our looms.'],
+    settlement: 'Ahmedabad',
+    social: { title: 'Julaha', socialClass: 'artisan' },
+  },
+
+  // -- Golconda --
+  {
+    id: 'golconda-miner', name: 'Diamond Cutter Ali',
+    position: { x: 110, y: 208 }, direction: 'left', behavior: 'stationary',
+    dialog: ['Golconda diamonds are the world\'s finest.', 'But the mines are haunted by ancient guardians now.'],
+    settlement: 'Golconda',
+    social: { title: 'Heera Kaat', socialClass: 'artisan' },
+  },
+
+  // -- Mysore --
+  {
+    id: 'mysore-general', name: 'Commander Haidar',
+    position: { x: 86, y: 268 }, direction: 'down', behavior: 'guard',
+    dialog: ['Mysore stands firm against all invaders.', 'Our kingdom has never been conquered.'],
+    settlement: 'Mysore',
+    social: { title: 'Bakshi', socialClass: 'soldier', zatRank: 1000, faction: 'Mysore Kingdom' },
+  },
+
+  // -- Shimla --
+  {
+    id: 'shimla-herbalist', name: 'Herbalist Devi',
+    position: { x: 94, y: 32 }, direction: 'down', behavior: 'wander', wanderRadius: 2,
+    dialog: ['The Himalayan herbs have extraordinary power.', 'Mountain flowers bloom with healing essence.'],
+    settlement: 'Shimla',
+    social: { title: 'Vaidya', socialClass: 'scholar' },
+    shopItems: ['healing_herb', 'neem_potion', 'tulsi_elixir', 'antidote_paste'],
+  },
+
+  // -- Haridwar --
+  {
+    id: 'haridwar-sadhu', name: 'Sadhu Bhairav',
+    position: { x: 126, y: 40 }, direction: 'down', behavior: 'stationary',
+    dialog: ['The Ganga descends from heaven here.', 'A holy dip cleanses all sins.', 'I can sell you a strong rope for the mountain paths.'],
+    settlement: 'Haridwar',
+    social: { title: 'Sadhu', socialClass: 'priest' },
+    shopItems: ['climbing_rope', 'camphor_incense', 'healing_herb'],
+  },
+
+  // -- Route NPCs (travelers) --
+  {
+    id: 'route-traveler-1', name: 'Wandering Sadhu',
+    position: { x: 104, y: 62 }, direction: 'down', behavior: 'wander', wanderRadius: 3,
+    dialog: ['The road to Delhi is safe, but watch for wild boars.', 'The tall grass hides creatures.'],
+    settlement: 'Shahjahanabad',
+    social: { title: 'Sadhu', socialClass: 'priest' },
+  },
+  {
+    id: 'route-traveler-2', name: 'Merchant Caravan',
+    position: { x: 80, y: 80 }, direction: 'right', behavior: 'wander', wanderRadius: 2,
+    dialog: ['We are heading to Amber with silk from Delhi.', 'The desert road grows dangerous after sunset.'],
+    settlement: 'Amber',
+    social: { title: 'Trader', socialClass: 'merchant' },
+  },
+  {
+    id: 'route-traveler-3', name: 'Pilgrim Devaki',
+    position: { x: 136, y: 84 }, direction: 'left', behavior: 'wander', wanderRadius: 2,
+    dialog: ['I walk to Varanasi for the holy festival.', 'The path along the Ganga is beautiful but perilous.'],
+    settlement: 'Ayodhya',
+    social: { title: 'Pilgrim', socialClass: 'peasant' },
+  },
 ];
 
 export const WORLD_NPCS: NPC[] = STORY_NPCS;
@@ -1058,4 +1710,18 @@ export const MINIMAP_COLORS: Record<number, string> = {
   [TileType.BORDER_POST]: '#8a6840',
   [TileType.CANAL]: '#5098c0',
   [TileType.CHARBAGH]: '#308838',
+  [TileType.LEDGE_S]: '#686058',
+  [TileType.LEDGE_N]: '#686058',
+  [TileType.LEDGE_E]: '#686058',
+  [TileType.LEDGE_W]: '#686058',
+  [TileType.STAIRS]: '#908878',
+  [TileType.ROCKY_PATH]: '#9a9080',
+  [TileType.CRACKED_EARTH]: '#b09860',
+  [TileType.MANGROVE]: '#2a5a2a',
+  [TileType.BAMBOO]: '#4a8a30',
+  [TileType.CACTUS]: '#608030',
+  [TileType.FALLEN_LOG]: '#7a5a30',
+  [TileType.BOULDER]: '#787070',
+  [TileType.LOCKED_GATE]: '#a04828',
+  [TileType.DRY_GRASS]: '#a09040',
 };

@@ -41,7 +41,7 @@ function tileHash(x: number, y: number): number {
   return ((x * 7919 + y * 6271) & 0xffff) / 0xffff;
 }
 
-// Map tile types to decoration sprites
+// Map tile types to decoration sprites — biome-aware selection
 function getDecorationForTile(
   tileType: TileType,
   x: number,
@@ -51,26 +51,59 @@ function getDecorationForTile(
 
   switch (tileType) {
     case TileType.FOREST:
-    case TileType.DENSE_JUNGLE:
     case TileType.TREE_BANYAN: {
       const idx = Math.floor(hash * TREE_SPRITES.length);
       const tree = TREE_SPRITES[idx];
-      return { ...tree, offsetY: -(tree.h - SCALED_TILE) }; // overflow upward
+      return { ...tree, offsetY: -(tree.h - SCALED_TILE) };
+    }
+    case TileType.DENSE_JUNGLE:
+    case TileType.BAMBOO: {
+      // Dense areas get more trees (higher spawn rate)
+      const idx = Math.floor(hash * 2) % TREE_SPRITES.length;
+      const tree = TREE_SPRITES[idx];
+      return { ...tree, offsetY: -(tree.h - SCALED_TILE) };
     }
     case TileType.TREE_PINE: {
-      // Tall narrow trees
       const tree = hash > 0.5 ? TREE_SPRITES[2] : TREE_SPRITES[3];
       return { ...tree, offsetY: -(tree.h - SCALED_TILE) };
     }
-    case TileType.TREE_PALM: {
+    case TileType.TREE_PALM:
+    case TileType.MANGROVE: {
       return { ...PALM_TREE, offsetY: -(PALM_TREE.h - SCALED_TILE) };
     }
-    case TileType.TALL_GRASS:
-    case TileType.FLOWERS: {
-      if (hash > 0.6) return null; // not every tile gets a bush
+    case TileType.TALL_GRASS: {
+      if (hash > 0.5) return null;
       const idx = Math.floor(hash * 3 * BUSH_SPRITES.length) % BUSH_SPRITES.length;
       const bush = BUSH_SPRITES[idx];
-      return { ...bush, offsetY: SCALED_TILE - bush.h - 4 }; // sit on ground
+      return { ...bush, offsetY: SCALED_TILE - bush.h - 4 };
+    }
+    case TileType.FLOWERS: {
+      if (hash > 0.55) return null;
+      const bush = BUSH_SPRITES[2]; // small round bush for flowers
+      return { ...bush, offsetY: SCALED_TILE - bush.h - 4 };
+    }
+    case TileType.SAND_DUNES:
+    case TileType.DRY_GRASS:
+    case TileType.CRACKED_EARTH: {
+      // Desert areas: sparse, only occasional props
+      if (hash > 0.15) return null;
+      return { ...SIGN_SPRITE, offsetY: SCALED_TILE - SIGN_SPRITE.h };
+    }
+    case TileType.CACTUS: {
+      // Cactus gets a small bush sprite (stand-in)
+      const bush = BUSH_SPRITES[0];
+      return { ...bush, offsetY: SCALED_TILE - bush.h - 4 };
+    }
+    case TileType.ROCKY_PATH:
+    case TileType.ROCKS:
+    case TileType.BOULDER: {
+      if (hash > 0.2) return null;
+      return { ...SIGN_SPRITE, offsetY: SCALED_TILE - SIGN_SPRITE.h };
+    }
+    case TileType.SWAMP: {
+      if (hash > 0.3) return null;
+      const bush = BUSH_SPRITES[1]; // flat bush for swamp
+      return { ...bush, offsetY: SCALED_TILE - bush.h - 2 };
     }
     case TileType.HUT: {
       const house = HOUSE_SPRITES[0];
@@ -78,7 +111,7 @@ function getDecorationForTile(
     }
     case TileType.ROOF:
     case TileType.PALACE: {
-      if (hash > 0.3) return null; // only some roof tiles get a house
+      if (hash > 0.3) return null;
       const house = HOUSE_SPRITES[1];
       return { ...house, offsetY: -(house.h - SCALED_TILE) };
     }
@@ -87,7 +120,7 @@ function getDecorationForTile(
     }
     case TileType.FORT_WALL:
     case TileType.MUGHAL_GATE: {
-      if (hash > 0.15) return null; // sparse gates
+      if (hash > 0.15) return null;
       return { ...GATE_SPRITE, offsetY: -(GATE_SPRITE.h - SCALED_TILE) };
     }
     case TileType.MARKET: {
@@ -102,6 +135,12 @@ function getDecorationForTile(
     }
     case TileType.CAMPSITE: {
       return { ...SIGN_SPRITE, offsetY: SCALED_TILE - SIGN_SPRITE.h };
+    }
+    case TileType.GARDEN:
+    case TileType.CHARBAGH: {
+      if (hash > 0.5) return null;
+      const bush = BUSH_SPRITES[0];
+      return { ...bush, offsetY: SCALED_TILE - bush.h - 4 };
     }
     default:
       return null;
@@ -130,9 +169,11 @@ const DecorationRenderer: React.FC<DecorationRendererProps> = ({ map, cameraX, c
 
     for (let y = startTileY; y < endTileY; y++) {
       for (let x = startTileX; x < endTileX; x++) {
-        // Check both ground and decor layers for decoration candidates
+        // Check decor layer first, then fall back to ground layer
         const decorTile = map.decor?.[y]?.[x];
-        const tileType = (decorTile != null && decorTile !== -1) ? decorTile : null;
+        const tileType: TileType | null = (decorTile != null && decorTile !== -1)
+          ? decorTile
+          : (map.ground?.[y]?.[x] ?? null);
 
         if (tileType === null) continue;
 

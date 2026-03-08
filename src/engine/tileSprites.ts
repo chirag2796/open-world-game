@@ -18,17 +18,21 @@ const GROUND_GROUP = new Set([
   TileType.PLAINS, TileType.TALL_GRASS, TileType.FARM,
   TileType.FLOWERS, TileType.GARDEN, TileType.SWAMP,
   TileType.CHARBAGH, TileType.COURTYARD, TileType.PIETRA_DURA,
+  TileType.DRY_GRASS, TileType.MANGROVE,
 ]);
 const SAND_GROUP = new Set([
   TileType.DESERT, TileType.SAND_DUNES, TileType.BEACH,
+  TileType.CRACKED_EARTH, TileType.CACTUS,
 ]);
 const STONE_GROUP = new Set([
   TileType.MOUNTAIN, TileType.CLIFF, TileType.ROCKS,
   TileType.PLATEAU, TileType.SNOW, TileType.ICE,
+  TileType.ROCKY_PATH, TileType.BOULDER, TileType.STAIRS,
+  TileType.LEDGE_N, TileType.LEDGE_S, TileType.LEDGE_E, TileType.LEDGE_W,
 ]);
 const TREE_GROUP = new Set([
   TileType.FOREST, TileType.DENSE_JUNGLE, TileType.TREE_PINE,
-  TileType.TREE_PALM, TileType.TREE_BANYAN,
+  TileType.TREE_PALM, TileType.TREE_BANYAN, TileType.BAMBOO,
 ]);
 const BUILDING_GROUP = new Set([
   TileType.WALL_MUD, TileType.WALL_STONE, TileType.ROOF,
@@ -38,6 +42,7 @@ const BUILDING_GROUP = new Set([
   TileType.ARCH, TileType.JALI, TileType.MINARET,
   TileType.CHHATRI, TileType.BAORI_WALL, TileType.HAVELI_WALL,
   TileType.MUGHAL_GATE, TileType.MOSQUE, TileType.BORDER_POST,
+  TileType.LOCKED_GATE, TileType.FALLEN_LOG,
 ]);
 
 function sameGroup(a: TileType, b: TileType): boolean {
@@ -123,6 +128,22 @@ const PRIMARY_SPRITE: Record<TileType, SpriteCoord> = {
   [TileType.BORDER_POST]:   [7, 1],
   [TileType.CANAL]:         [1, 0],
   [TileType.CHARBAGH]:      [1, 3],
+
+  // Height/obstacle tiles
+  [TileType.LEDGE_S]:       [13, 6],  // cliff face visual
+  [TileType.LEDGE_N]:       [13, 6],
+  [TileType.LEDGE_E]:       [13, 6],
+  [TileType.LEDGE_W]:       [13, 6],
+  [TileType.STAIRS]:        [5, 4],   // path visual (stairs)
+  [TileType.ROCKY_PATH]:    [12, 6],  // rocky ground
+  [TileType.CRACKED_EARTH]: [10, 4],  // dry desert
+  [TileType.MANGROVE]:      [16, 3],  // tree-like
+  [TileType.BAMBOO]:        [22, 3],  // pine-like
+  [TileType.CACTUS]:        [15, 6],  // rocks stand-in
+  [TileType.FALLEN_LOG]:    [18, 3],  // tree-like obstacle
+  [TileType.BOULDER]:       [15, 6],  // rocks
+  [TileType.LOCKED_GATE]:   [11, 1],  // door visual
+  [TileType.DRY_GRASS]:     [0, 3],   // farm-like dried grass
 };
 
 // Edge-aware sprite variants for terrain that should have smooth edges

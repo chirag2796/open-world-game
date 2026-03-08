@@ -1,11 +1,20 @@
 import { System, Entity } from '../ecs/types';
-import { SOLID_TILES } from '../../types';
+import { SOLID_TILES, SLOW_TILES, TileType } from '../../types';
 import { SCALED_TILE, DEV_MODE } from '../../engine/constants';
+
+// Map interface with optional elevation
+interface MapData {
+  width: number;
+  height: number;
+  ground: number[][];
+  elevation?: number[][];
+}
 
 // Checks if a bounding box at (px, py) with given inset can occupy the tile
 function canMoveTo(
   px: number, py: number, inset: number,
-  map: { width: number; height: number; ground: number[][] },
+  map: MapData,
+  fromPx?: number, fromPy?: number,
 ): boolean {
   const offset = SCALED_TILE * inset;
   const corners = [
@@ -19,8 +28,34 @@ function canMoveTo(
     const ty = Math.floor(c.y / SCALED_TILE);
     if (tx < 0 || tx >= map.width || ty < 0 || ty >= map.height) return false;
     if (SOLID_TILES.has(map.ground[ty][tx])) return false;
+
+    // Elevation check: can't climb more than 1 level without stairs
+    if (map.elevation && fromPx !== undefined && fromPy !== undefined) {
+      const fromTx = Math.floor((fromPx + SCALED_TILE / 2) / SCALED_TILE);
+      const fromTy = Math.floor((fromPy + SCALED_TILE / 2) / SCALED_TILE);
+      if (fromTx >= 0 && fromTx < map.width && fromTy >= 0 && fromTy < map.height) {
+        const fromElev = map.elevation[fromTy][fromTx];
+        const toElev = map.elevation[ty][tx];
+        const tile = map.ground[ty][tx] as TileType;
+        // Can go down freely, can go up 1 level, can use stairs for 2+ levels
+        if (toElev > fromElev + 1 && tile !== TileType.STAIRS) {
+          return false;
+        }
+      }
+    }
   }
   return true;
+}
+
+// Get movement speed multiplier based on terrain (slow tiles)
+function getTerrainSpeedMultiplier(
+  px: number, py: number, map: MapData,
+): number {
+  const tx = Math.floor((px + SCALED_TILE / 2) / SCALED_TILE);
+  const ty = Math.floor((py + SCALED_TILE / 2) / SCALED_TILE);
+  if (tx < 0 || tx >= map.width || ty < 0 || ty >= map.height) return 1;
+  const tile = map.ground[ty][tx] as TileType;
+  return (SLOW_TILES as Record<number, number>)[tile] ?? 1;
 }
 
 // Check if a bounding box at (px, py) overlaps any NPC entity
@@ -61,7 +96,10 @@ export const MovementSystem: System = (entities, ctx) => {
   }
 
   player.sprite.frameCounter++;
-  const speed = player.velocity.speed;
+  const baseSpeed = player.velocity.speed;
+  // Apply terrain slow-down
+  const terrainMult = getTerrainSpeedMultiplier(player.position.x, player.position.y, ctx.map);
+  const speed = Math.max(1, Math.round(baseSpeed * terrainMult));
   let { x, y } = player.position;
   let nx = x, ny = y;
 
@@ -80,11 +118,11 @@ export const MovementSystem: System = (entities, ctx) => {
     x = Math.max(0, Math.min(nx, (ctx.map.width - 1) * SCALED_TILE));
     y = Math.max(0, Math.min(ny, (ctx.map.height - 1) * SCALED_TILE));
     moved = true;
-  } else if (canMoveTo(nx, ny, inset, ctx.map) && !collidesWithNPC(nx, ny, entities)) {
+  } else if (canMoveTo(nx, ny, inset, ctx.map, x, y) && !collidesWithNPC(nx, ny, entities)) {
     x = nx; y = ny; moved = true;
-  } else if (nx !== x && canMoveTo(nx, y, inset, ctx.map) && !collidesWithNPC(nx, y, entities)) {
+  } else if (nx !== x && canMoveTo(nx, y, inset, ctx.map, x, y) && !collidesWithNPC(nx, y, entities)) {
     x = nx; moved = true;
-  } else if (ny !== y && canMoveTo(x, ny, inset, ctx.map) && !collidesWithNPC(x, ny, entities)) {
+  } else if (ny !== y && canMoveTo(x, ny, inset, ctx.map, x, y) && !collidesWithNPC(x, ny, entities)) {
     y = ny; moved = true;
   }
 

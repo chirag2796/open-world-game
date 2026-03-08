@@ -60,6 +60,18 @@ const CHAR_MAP: Record<string, TileType | -1> = {
   '_': TileType.CANAL,
   '%': TileType.CHARBAGH,
   '!': TileType.BORDER_POST,
+  // Height/obstacle chars
+  'v': TileType.LEDGE_S,
+  '^': TileType.STAIRS,
+  'y': TileType.ROCKY_PATH,
+  'e': TileType.CRACKED_EARTH,
+  'm': TileType.MANGROVE,
+  'z': TileType.BAMBOO,
+  'k': TileType.CACTUS,
+  'l': TileType.FALLEN_LOG,
+  'j': TileType.BOULDER,
+  'q': TileType.LOCKED_GATE,
+  'a': TileType.DRY_GRASS,
 };
 
 export interface StructureTemplate {
@@ -580,3 +592,95 @@ export const MUGHAL_STRUCTURES = [
   CHHATRI_PAVILION, RED_FORT, DESERT_HAVELI, BORDER_CHECKPOINT,
   MUGHAL_CAPITAL,
 ];
+
+// === NEW: Biome-specific village templates ===
+
+export const DESERT_VILLAGE = parse('desert_village', [
+  '..aaDaa..',
+  '.1a.D.a1.',
+  '.1d.D.d1.',
+  '.11.DkD11.',
+  '....DDD...',
+  '.1a.D.a1.',
+  '.1d.D.d1.',
+  '.11.aD.11.',
+  '..aaD.a..',
+]);
+
+export const MOUNTAIN_VILLAGE = parse('mountain_village', [
+  '..yy^yy..',
+  '.yyy^yyy.',
+  '.xdyDydx.',
+  '.xxyDyxx.',
+  '.yyDDDyy.',
+  '.xdyDydx.',
+  '.xxyDyxx.',
+  '..yy^yy..',
+]);
+
+export const FOREST_VILLAGE = parse('forest_village', [
+  '..TTtDtTT..',
+  '.TwdtDtdwT.',
+  '.TwwtDtwwT.',
+  '...tDDDt...',
+  '.TwdtDtdwT.',
+  '.TwwtDtwwT.',
+  '..TTtDtTT..',
+]);
+
+export const COASTAL_VILLAGE = parse('coastal_village', [
+  '..hhDhh..',
+  '.hwdDdwh.',
+  '.hwwDwwh.',
+  '..hDDDh..',
+  '.hLdDdLh.',
+  '.hwwDwwh.',
+  '..hhDhh..',
+]);
+
+// === NEW: Obstacle structures ===
+
+export const FALLEN_TREE_BARRIER = parse('fallen_tree_barrier', [
+  'lll',
+]);
+
+export const BOULDER_BARRIER = parse('boulder_barrier', [
+  'jj',
+  'jj',
+]);
+
+export const GUARD_POST = parse('guard_post', [
+  '.!q!.',
+  '.1S1.',
+  '..S..',
+]);
+
+// === NEW: Oasis ===
+export const DESERT_OASIS = parse('desert_oasis', [
+  '...aa...',
+  '..aLWa..',
+  '.aWOOWa.',
+  '.LWOOLW.',
+  '.aWOOWa.',
+  '..aLWa..',
+  '...aa...',
+]);
+
+// === NEW: Mountain Pass ===
+export const MOUNTAIN_PASS = parse('mountain_pass', [
+  'CCC^CCC',
+  'C..y..C',
+  'C.yyy.C',
+  'C..y..C',
+  'CCC^CCC',
+]);
+
+// === NEW: Hot Springs ===
+export const HOT_SPRINGS = parse('hot_springs', [
+  '..KK..',
+  '.KWWK.',
+  'KWWWWK',
+  'KWWWWK',
+  '.KWWK.',
+  '..KK..',
+]);

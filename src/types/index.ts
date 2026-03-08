@@ -69,6 +69,21 @@ export enum TileType {
   BORDER_POST = 54,
   CANAL = 55,
   CHARBAGH = 56,
+  // Height/obstacle system
+  LEDGE_S = 57,       // one-way jump-down ledge (south)
+  LEDGE_N = 58,
+  LEDGE_E = 59,
+  LEDGE_W = 60,
+  STAIRS = 61,         // bidirectional elevation transition
+  ROCKY_PATH = 62,     // slow movement path through mountains
+  CRACKED_EARTH = 63,  // desert dry ground
+  MANGROVE = 64,       // coastal wetland tree
+  BAMBOO = 65,         // bamboo grove
+  CACTUS = 66,         // desert obstacle
+  FALLEN_LOG = 67,     // cuttable obstacle
+  BOULDER = 68,        // breakable obstacle
+  LOCKED_GATE = 69,    // gate requiring key/flag
+  DRY_GRASS = 70,      // transition between plains/desert
 }
 
 export const SOLID_TILES = new Set([
@@ -98,7 +113,22 @@ export const SOLID_TILES = new Set([
   TileType.MUGHAL_GATE,
   TileType.MOSQUE,
   TileType.BORDER_POST,
+  TileType.CACTUS,
+  TileType.FALLEN_LOG,
+  TileType.BOULDER,
+  TileType.LOCKED_GATE,
 ]);
+
+// Tiles that slow player movement (tile → speed multiplier, lower = slower)
+export const SLOW_TILES: Partial<Record<TileType, number>> = {
+  [TileType.SWAMP]: 0.5,
+  [TileType.SAND_DUNES]: 0.7,
+  [TileType.DENSE_JUNGLE]: 0.6,
+  [TileType.TALL_GRASS]: 0.85,
+  [TileType.ROCKY_PATH]: 0.7,
+  [TileType.CRACKED_EARTH]: 0.8,
+  [TileType.MANGROVE]: 0.5,
+};
 
 // Tiles that can trigger random encounters
 export const ENCOUNTER_TILES = new Set([
@@ -131,6 +161,44 @@ export interface TileMapData {
   height: number;
   ground: TileType[][];
   decor: (TileType | -1)[][]; // decoration layer (-1 = empty)
+  elevation: number[][];       // 0=sea, 1=ground, 2=raised, 3=cliff, 4=peak
+}
+
+// === Zone & Obstacle System ===
+
+export type ZoneType = 'route' | 'town' | 'wild' | 'landmark' | 'dungeon';
+
+export interface ZoneDef {
+  id: string;
+  name: string;
+  type: ZoneType;
+  bounds: { x: number; y: number; w: number; h: number };
+  suggestedLevel: number;
+  encounterRate: number;     // multiplier on base rate (0 = no encounters)
+  enemyPool?: string[];       // specific enemy IDs (if empty, use biome default)
+  elevation?: number;         // override elevation for this zone
+}
+
+export type ObstacleType =
+  | 'cuttable_tree'     // requires clearing_axe
+  | 'breakable_rock'    // requires iron_pickaxe
+  | 'locked_gate'       // requires specific flag or key
+  | 'flooded_path'      // requires boat_token
+  | 'cliff_climb'       // requires climbing_rope
+  | 'guard_block';      // requires story flag
+
+export interface ObstacleDef {
+  id: string;
+  type: ObstacleType;
+  tileX: number;
+  tileY: number;
+  width: number;         // obstacle width in tiles
+  height: number;        // obstacle height in tiles
+  requiredItem?: string; // item ID to clear
+  requiredFlag?: string; // story flag to clear
+  tileType: TileType;    // what tile to place as the obstacle
+  clearTile: TileType;   // what to replace with when cleared
+  description: string;   // shown when player tries to pass
 }
 
 export type NPCBehavior = 'stationary' | 'wander' | 'patrol' | 'guard' | 'scheduled';
